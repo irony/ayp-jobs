@@ -14,47 +14,33 @@ var ObjectId = require('mongoose').Types.ObjectId,
     interestingnessCalculator = require('../jobs/interestingnessCalculator'),
     mongoose = require('mongoose');
 
-function Clusterer(done){
+function Clusterer(user, done){
   var self = this;
 
   if (!done) throw new Error("Callback is mandatory");
 
-  // find all users
-  User.find().exec(function(err, users){
-    
-    if (err) throw err;
+  // find all their photos and sort them on interestingness
+  Photo.find({'owners': user._id}, 'taken copies.' + user._id + '.calculatedVote copies.' + user._id + '.vote')
+  .where('copies.' + user._id + '.cluster').exists(false)
+  // .where('copies.' + user._id + '.clusterOrder').exists(false)
+  .sort({ taken : -1 })
+  .exec(function(err, photos){
+    if (err || !photos || !photos.length) return done(err);
 
-    async.mapSeries((users || []), function(user, userDone){
-
-      // find all their photos and sort them on interestingness
-      Photo.find({'owners': user._id}, 'taken copies.' + user._id + '.calculatedVote copies.' + user._id + '.vote')
-      .where('copies.' + user._id + '.cluster').exists(false)
-      // .where('copies.' + user._id + '.clusterOrder').exists(false)
-      .sort({ taken : -1 })
-      .exec(function(err, photos){
-        if (err || !photos || !photos.length) return userDone(err);
-
-        photos.forEach(function(photo){
-          if (!photo.copies) photo.copies = {};
-          if (!photo.copies[user._id]) photo.copies[user._id] = {};
-        });
-
-        var groups = Clusterer.extractGroups(user, photos, 100);
-        var savedPhotos = groups.reduce(function(a, group){
-          var rankedGroup = Clusterer.rankGroupPhotos(group);
-          a.concat(Clusterer.saveGroupPhotos(rankedGroup));
-          return a;
-        }, []);
-
-        return userDone(null, savedPhotos.length ? user : null);
-
-      });
-    }, function(err, users){
-
-        // if (!err) console.debug(': Cluster OK %d users', users.length);
-        if (done) done(err, users);
-
+    photos.forEach(function(photo){
+      if (!photo.copies) photo.copies = {};
+      if (!photo.copies[user._id]) photo.copies[user._id] = {};
     });
+
+    var groups = Clusterer.extractGroups(user, photos, 100);
+    var savedPhotos = groups.reduce(function(a, group){
+      var rankedGroup = Clusterer.rankGroupPhotos(group);
+      a.concat(Clusterer.saveGroupPhotos(rankedGroup));
+      return a;
+    }, []);
+
+    return done(null, savedPhotos.length ? user : null);
+
   });
 }
 

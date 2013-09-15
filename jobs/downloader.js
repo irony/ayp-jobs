@@ -62,11 +62,10 @@ var downloader = {
   },
 
 /**
-   * Download all new thumbnail photos for a user
-   * @param  {[User]} user
+   * Download all new thumbnail photos for all users
    * @param  {Callback} done
    */
-  downloadThumbnails : function(done){
+  downloadMissingThumbnails : function(done){
     if (!done) throw new Error("Callback is mandatory");
 
     var photoQuery = Photo.find({}, 'store updated src taken source path mimeType owners')
