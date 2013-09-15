@@ -114,17 +114,21 @@ var importer = {
         if (!connectorName) return done();
 
         var connector = connectors[connectorName];
-        if (!connector) return done(); //console.log("Could not find connector ", connectorName, connectors);
+        
+        if (!connector) return done();
 
         if (connector.importNewPhotos) {
           connector.importNewPhotos(user, function(photos){
-            return importer.savePhotos(user, photos, emit);
+            return photos.length && importer.savePhotos(user, photos, emit);
           }, function(err, photos){
+
             if (err || !photos || !photos.length) return done && done(err);
 
-            if (photos.length) console.debug('Importer: Found %d new photos', photos.length);
+            if (photos.length) console.log('Importer: Found %d new photos', photos.length);
             return done();
           });
+        } else {
+          console.log("No import feature in connector ", connectorName);
         }
       });
 
