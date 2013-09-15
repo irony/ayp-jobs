@@ -1,0 +1,17 @@
+{
+  "name": "AllYourPhotosModels",
+  "version": "0.0.1",
+  "description": "Models for the all your photos system, use npm install ../models to install",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD",
+  "dependencies": {
+    "mongoose": "~3.6.19",
+    "lodash": "~2.0.0",
+    "passport-local-mongoose": "~0.2.4"
+  }
+}
