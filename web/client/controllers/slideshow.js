@@ -1,3 +1,0 @@
-
-function SlideshowController ($scope, $http){
-}

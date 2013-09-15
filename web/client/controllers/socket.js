@@ -1,7 +1,0 @@
-appProvider.factory('socket', function(){
-
-  var socket = io.connect();
-
-  return socket;
-
-});

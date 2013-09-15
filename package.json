@@ -1,0 +1,22 @@
+{
+  "name": "AllYourPhotosJobs",
+  "version": "0.0.0",
+  "description": "ERROR: No README.md file found!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD",
+  "dependencies": {
+    "mongoose": "~3.6.19",
+    "AllYourPhotosModels": "0.0.1",
+    "async": "~0.2.9",
+    "require-dir": "~0.1.0",
+    "redis": "~0.8.4",
+    "lodash": "~2.0.0",
+    "clusterfck": "~0.5.2",
+    "blitline": "~1.1.6"
+  }
+}

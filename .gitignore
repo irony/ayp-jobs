@@ -1,6 +1,1 @@
-.DS_Store
 node_modules
-npm-debug.log
-*.rdb
-client/build
-bower_components
