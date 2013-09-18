@@ -11,7 +11,7 @@ var ObjectId = require('mongoose').Types.ObjectId,
     emit = {}, // fool jsLint
     _ = require('lodash'),
     clusterfck = require('clusterfck'),
-    interestingnessCalculator = require('../jobs/interestingnessCalculator'),
+    interestingnessCalculator = PhotoCopy.interestingnessCalculator;
     mongoose = require('mongoose');
 
 function Clusterer(user, done){
