@@ -5,6 +5,7 @@
 var Photo = require('AllYourPhotosModels').photo;
 var PhotoCopy = require('AllYourPhotosModels').photoCopy;
 var User = require('AllYourPhotosModels').user;
+var connectors = require('AllYourPhotosConnectors')();
 var _ = require('lodash');
 var async = require('async');
 
@@ -24,41 +25,44 @@ var downloader = {
     if (!photo.source || !photo.source.length) return done('No source connector found') && console.log('No source photo', photo);
     if (!options || (!options.thumbnail && !options.original)) return done('No downloader defined in options');
 
-    var connector = require('../server/connectors/' + photo.source);
-    if (connector.downloadOriginal && user.accounts[photo.source]) {
-      
-      console.debug('Downloading %s %s from %s', options.thumbnail && "thumbnail", options.original && "and original" || "", photo.source);
-      async.parallel({
-        original : function(done){
+    User.findById(user._id, function(err, user){
 
-          //TODO: fix the bug here
-          if (options.original && (!photo.store || !photo.store.original || !photo.store.original.stored)) {
-            photo.mimeType = photo.mimeType || 'image/jpeg';
-            return connector.downloadOriginal(user, photo, function(err, result){
-              console.debug('Done original');
-              return done(err, result);
-            });
+      var connector = connectors[photo.source];
+
+      if (connector.downloadOriginal && user.accounts[photo.source]) {
+        
+        console.debug('Downloading %s %s from %s', options.thumbnail && "thumbnail", options.original && "and original" || "", photo.source);
+        async.parallel({
+          original : function(done){
+
+            //TODO: fix the bug here
+            if (options.original && (!photo.store || !photo.store.original || !photo.store.original.stored)) {
+              photo.mimeType = photo.mimeType || 'image/jpeg';
+              return connector.downloadOriginal(user, photo, function(err, result){
+                console.debug('Done original');
+                return done(err, result);
+              });
+            }
+            return done();
+
+          },
+          thumbnail : function(done){
+            if (options.thumbnail && (!photo.store || !photo.store.thumbnail || !photo.store.thumbnail.stored)) {
+              return connector.downloadThumbnail(user, photo, function(err, result){
+                console.debug('Done thumbnail');
+                return done(err, result);
+              });
+            }
+            return done();
           }
-          return done();
-
-        },
-        thumbnail : function(done){
-          if (options.thumbnail && (!photo.store || !photo.store.thumbnail || !photo.store.thumbnail.stored)) {
-            return connector.downloadThumbnail(user, photo, function(err, result){
-              console.debug('Done thumbnail');
-              return done(err, result);
-            });
+        }, function(result){
+          if (!result || (!result.original && !result.thumbnail)){
+            return done(result);
           }
-          return done();
-        }
-      }, function(result){
-        if (!result || (!result.original && !result.thumbnail)){
-          return done(result);
-        }
-        return done(null, result);
-      });
-    }
-
+          return done(null, result);
+        });
+      }
+    });
   },
 
 /**

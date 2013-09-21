@@ -8,9 +8,10 @@ var async = require('async');
 module.exports= function(done){
   if (!done) throw new Error("Callback is mandatory");
   User.find()
+  .select('displayName')
   // TODO: add more filters here - we don't need to query all every time
   // for example - if someone haven't been online for a month..
-  .where('accounts.dropbox').exists()
+  .where('accounts').exists()
   .exec(function(err, users){
     return done(err, users);
   });

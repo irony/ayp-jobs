@@ -96,7 +96,9 @@ var importer = {
 
       importer.findOrInitPhoto(user, photo, function(err, photo){
 
-        photo.save(next);
+        photo.save(function(err){
+          next(err, photo);
+        });
       });
 
     }, done);
@@ -107,33 +109,42 @@ var importer = {
    * @param  {[type]}   user user
    * @param  {Function} done callback when done
    */
-  importPhotosFromAllConnectors : function(user, emit, done){
-    if (user.accounts){
-      
-      _.each(user.accounts, function(account, connectorName){
-        if (!connectorName) return done();
+  importPhotosFromConnector : function(user, connectorName, emit, done){
+    User.findById(user._id, function(err, user){
+      if (err) return done(err);
 
+      console.debug('Importing photos from ', user.displayName);
+     
+      if (user.accounts){
         var connector = connectors[connectorName];
-        
-        if (!connector) return done();
+          
+        if (!connector || !connector.importNewPhotos) return done(new Error("No import connector found with name " + connectorName));
 
-        if (connector.importNewPhotos) {
-          connector.importNewPhotos(user, function(photos){
-            return photos.length && importer.savePhotos(user, photos, emit);
-          }, function(err, photos){
-
-            if (err || !photos || !photos.length) return done && done(err);
-
-            if (photos.length) console.log('Importer: Found %d new photos', photos.length);
-            return done();
+        connector.importNewPhotos(user, function(err, photos){
+          return importer.savePhotos(user, photos, function(err, photos){
+            return emit(err, photos);
           });
-        } else {
-          console.log("No import feature in connector ", connectorName);
-        }
-      });
+        }, done);
+      }
 
-    }
+      // if (queue.tasks.length === 0) return done();
+    });
+  },
 
+  getAllImportConnectorsForUser : function(user, done){
+    User.findById(user._id, function(err, user){
+      if (err) return done(err);
+      if (user.accounts){
+        var importConnectors = _.map(user.accounts, function(account, connectorName){
+          var connector = connectors[connectorName];
+          if (connector.importNewPhotos) {
+            return connectorName;
+          }
+        });
+        return done(null, importConnectors);
+      }
+      return done(null, []);
+    });
   },
 
   importAllNewPhotos : function(done){

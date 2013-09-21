@@ -130,7 +130,7 @@ Clusterer.rankGroupPhotos = function(group, nrClusters){
 Clusterer.saveGroupPhotos = function(group){
   var i = 1;
 
-  if (!group.user) throw "User is not set on group";
+  if (!group.user) throw new Error("User is not set on group");
   group.photos = group.photos.map(function(photo){
     if (photo.oldCluster && photo.cluster === photo.oldCluster) {
       return null;
