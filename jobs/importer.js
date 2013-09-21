@@ -137,11 +137,15 @@ var importer = {
       if (user.accounts){
         var importConnectors = _.map(user.accounts, function(account, connectorName){
           var connector = connectors[connectorName];
-          if (connector.importNewPhotos) {
+          if (connector && connector.importNewPhotos) {
             return connectorName;
+          } else{
+            return null;
           }
         });
-        return done(null, importConnectors);
+        return done(null, importConnectors.filter(function(connector){
+          return connector;
+        }));
       }
       return done(null, []);
     });
