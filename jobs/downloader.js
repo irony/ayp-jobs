@@ -65,7 +65,13 @@ var downloader = {
                 return done();
               }
             }
-          }, done);
+          }, function(err, result){
+            if (err) return done(err);
+
+            photo.markModified('store');
+            if (options.save) photo.save(done);
+            else done(null, photo);
+          });
         }
       });
     });
