@@ -96,7 +96,7 @@ var importer = {
 
       importer.findOrInitPhoto(user, photo, function(err, photo){
 
-        photo.save(function(err){
+        photo.save(function(err, photo){
           next(err, photo);
         });
       });
@@ -111,23 +111,37 @@ var importer = {
    */
   importPhotosFromConnector : function(user, connectorName, emit, done){
     User.findById(user._id, function(err, user){
-      if (err) return done(err);
+      if (err || !user) return done(err);
 
-      console.debug('Importing photos from ', user.displayName);
+      console.debug('Importing photos from ' + user.displayName);
      
-      if (user.accounts){
-        var connector = connectors[connectorName];
-          
-        if (!connector || !connector.importNewPhotos) return done(new Error("No import connector found with name " + connectorName));
+      var connector = connectors[connectorName];
+        
+      if (!connector || !connector.importNewPhotos)
+        return done(new Error("No import connector found with name " + connectorName));
 
+      function restart(){
         connector.importNewPhotos(user, function(err, photos){
-          return importer.savePhotos(user, photos, function(err, photos){
-            return emit(err, photos);
-          });
-        }, done);
-      }
+          if (err) console.debug('import err: ', err);
+          else console.debug('import done, found: ' + (photos && photos.length || 0));
+          
+          if (err) return done(err);
+          if (!photos || !photos.length) return done();
 
-      // if (queue.tasks.length === 0) return done();
+          return importer.savePhotos(user, photos, function(err, photos){
+            if (photos.length){
+              console.log('got photos', photos.length);
+              emit(err, photos);
+              restart(); // as long as we get photos we continue reading
+            } else{
+              done(err, photos);
+            }
+
+          });
+        });
+      }
+      restart();
+
     });
   },
 

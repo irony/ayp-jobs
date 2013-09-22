@@ -19,51 +19,58 @@ var downloader = {
    * @param  {[object]} options, {original: true, thumbnail:true}
    * @param  {Function} done  callback when both are done
    */
-  downloadPhoto : function(user, photo, options, done){
+  downloadPhoto : function(user, barePhoto, options, done){
 
     if (typeof(done) !== "function") throw new Error("Callback is mandatory" + JSON.stringify(done));
-    if (!photo.source || !photo.source.length) return done('No source connector found') && console.log('No source photo', photo);
     if (!options || (!options.thumbnail && !options.original)) return done('No downloader defined in options');
 
     User.findById(user._id, function(err, user){
+      if(err) return done(err);
 
-      var connector = connectors[photo.source];
+      Photo.findById(barePhoto._id, function(err, photo){
+        if (err) return done(err);
+        if (!photo) return done(new Error('Photo ' + barePhoto._id + 'not found'));
 
-      if (connector.downloadOriginal && user.accounts[photo.source]) {
-        
-        console.debug('Downloading %s %s from %s', options.thumbnail && "thumbnail", options.original && "and original" || "", photo.source);
-        async.parallel({
-          original : function(done){
+        var connector = connectors[photo.source];
 
-            //TODO: fix the bug here
-            if (options.original && (!photo.store || !photo.store.original || !photo.store.original.stored)) {
-              photo.mimeType = photo.mimeType || 'image/jpeg';
-              return connector.downloadOriginal(user, photo, function(err, result){
-                console.debug('Done original');
-                return done(err, result);
-              });
+        if (connector.downloadOriginal && user.accounts[photo.source]) {
+          
+          console.debug('Downloading %s %s from %s', options.thumbnail && "thumbnail", options.original && "and original" || "", photo.source);
+          async.parallel({
+            original : function(done){
+
+              //TODO: fix the bug here
+              if (options.original && (!photo.store || !photo.store.original || !photo.store.original.stored)) {
+                console.debug('downloading original...');
+                photo.mimeType = photo.mimeType || 'image/jpeg';
+                return connector.downloadOriginal(user, photo, function(err, photo){
+                  if (err) console.debug('Error original', err);
+                  return done(err, photo);
+                });
+              } else{
+                return done();
+              }
+
+            },
+            thumbnail : function(done){
+
+
+              if (options.thumbnail && (!photo.store || !photo.store.thumbnail || !photo.store.thumbnail.stored)) {
+                console.debug('downloading thumbnail...');
+                return connector.downloadThumbnail(user, photo, function(err, photo){
+                  if (err) console.debug('Error thumbnail', err);
+                  return done(err, photo);
+                });
+              } else {
+                return done();
+              }
             }
-            return done();
-
-          },
-          thumbnail : function(done){
-            if (options.thumbnail && (!photo.store || !photo.store.thumbnail || !photo.store.thumbnail.stored)) {
-              return connector.downloadThumbnail(user, photo, function(err, result){
-                console.debug('Done thumbnail');
-                return done(err, result);
-              });
-            }
-            return done();
-          }
-        }, function(result){
-          if (!result || (!result.original && !result.thumbnail)){
-            return done(result);
-          }
-          return done(null, result);
-        });
-      }
+          }, done);
+        }
+      });
     });
   },
+   
 
 /**
    * Download all new thumbnail photos for all users

@@ -13,6 +13,7 @@ module.exports= function(done){
   // for example - if someone haven't been online for a month..
   .where('accounts').exists()
   .exec(function(err, users){
+    console.debug('found ' + users.length);
     return done(err, users);
   });
 };
