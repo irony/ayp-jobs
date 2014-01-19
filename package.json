@@ -4,7 +4,6 @@
   "description": "ERROR: No README.md file found!",
   "main": "index.js",
   "scripts": {
-    "preinstall": "npm link AllYourPhotosModels",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": "",
@@ -12,7 +11,7 @@
   "license": "BSD",
   "dependencies": {
     "mongoose": "~3.6.19",
-    "AllYourPhotosModels": "0.0.1",
+    "AllYourPhotosModels": "irony/ayp-models",
     "async": "~0.2.9",
     "require-dir": "~0.1.0",
     "redis": "~0.8.4",
