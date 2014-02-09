@@ -18,6 +18,7 @@
     "redis": "~0.8.4",
     "lodash": "*",
     "clusterfck": "~0.5.2",
-    "blitline": "~1.1.6"
+    "blitline": "~1.1.6",
+    "nconf": "~0.6.9"
   }
 }
