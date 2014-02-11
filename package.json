@@ -10,9 +10,11 @@
   "repository": "",
   "author": "",
   "license": "BSD",
+  "peerDependencies" : {
+    "AllYourPhotosModels": "irony/ayp-models"
+  },
   "dependencies": {
     "mongoose": "~3.6.19",
-    "AllYourPhotosModels": "irony/ayp-models",
     "async": "~0.2.9",
     "require-dir": "~0.1.0",
     "redis": "~0.8.4",
