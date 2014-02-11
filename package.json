@@ -10,6 +10,9 @@
   "repository": "",
   "author": "",
   "license": "BSD",
+  "peerDependencies" : {
+    "nconf": "*",
+  },
   "dependencies" : {
     "AllYourPhotosModels": "irony/ayp-models",
     "lodash": "*",
