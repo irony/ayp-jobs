@@ -10,17 +10,15 @@
   "repository": "",
   "author": "",
   "license": "BSD",
-  "peerDependencies" : {
-    "AllYourPhotosModels": "irony/ayp-models"
-  },
-  "dependencies": {
-    "mongoose": "~3.6.19",
-    "async": "~0.2.9",
-    "require-dir": "~0.1.0",
-    "redis": "~0.8.4",
+  "dependencies" : {
+    "AllYourPhotosModels": "irony/ayp-models",
     "lodash": "*",
+    "mongoose": "*",
+    "redis": "*",
+    "async": "*",
+    "nconf": "*",
+    "require-dir": "~0.1.0",
     "clusterfck": "~0.5.2",
-    "blitline": "~1.1.6",
-    "nconf": "~0.6.9"
+    "blitline": "~1.1.6"
   }
 }
