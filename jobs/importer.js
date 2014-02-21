@@ -22,7 +22,6 @@ var importer = {
   
   findOrInitPhoto : function(user, photo, done){
     Photo.find({'taken' : photo.taken}, function(err, photos){
-
       var dbPhoto = photos.filter(function(existingPhoto){
         // We found a set of photos at the exact same time but before assuming
         // it is the same we want to do some checks to find our own
@@ -90,13 +89,14 @@ var importer = {
   savePhotos : function(user, photos, done){
     console.debug('Saving %d photos', photos.length);
 
-    async.mapSeries(photos, function(photo, next){
+    async.mapLimit(photos, 20, function(photo, next){
 
       console.debug('Saving photo %s', photo.path, photo.client_mtime, photo.taken, photo.bytes);
 
       importer.findOrInitPhoto(user, photo, function(err, photo){
 
         photo.save(function(err, photo){
+          console.log('photo saved', photo);
           next(err, photo);
         });
       });
@@ -109,7 +109,7 @@ var importer = {
    * @param  {[type]}   user user
    * @param  {Function} done callback when done
    */
-  importPhotosFromConnector : function(user, connectorName, emit, done){
+  importPhotosFromConnector : function(user, connectorName, done){
     User.findById(user._id, function(err, user){
       if (err || !user) return done(err);
 
@@ -120,27 +120,28 @@ var importer = {
       if (!connector || !connector.importNewPhotos)
         return done(new Error("No import connector found with name " + connectorName));
 
-      function restart(){
+      function restart(results){
         connector.importNewPhotos(user, function(err, photos){
           if (err) console.debug('import err: ', err);
           else console.debug('import done, found: ' + (photos && photos.length || 0));
           
           if (err) return done(err);
-          if (!photos || !photos.length) return done();
+          if (!photos || !photos.length) return done(null, results);
 
           return importer.savePhotos(user, photos, function(err, photos){
-            if (photos.length){
-              console.log('got photos', photos.length);
-              emit(err, photos);
-              restart(); // as long as we get photos we continue reading
+            if (err) return console.debug('error:' + err) && done(err);
+            results = results.concat(photos);
+            if (photos.length && results.length < 100){
+              // as long as we get photos we continue reading until we reach the higher limit
+              restart(results);
             } else{
-              done(err, photos);
+              done(err, results);
             }
 
           });
         });
       }
-      restart();
+      restart([]);
 
     });
   },
