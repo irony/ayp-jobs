@@ -127,10 +127,9 @@ var importer = {
         if (!photos || !photos.length) return done();
         var next = photos.next;
 
-        return importer.savePhotos(user, photos, function(err, photos){
-          if (err) return done(err);
-          done(null, photos, next);
-        });
+        if (err) return done(err);
+        done(null, photos, next);
+
       });
 
     });
