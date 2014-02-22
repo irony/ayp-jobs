@@ -96,7 +96,6 @@ var importer = {
       importer.findOrInitPhoto(user, photo, function(err, photo){
 
         photo.save(function(err, photo){
-          console.log('photo saved', photo);
           next(err, photo);
         });
       });
@@ -109,7 +108,7 @@ var importer = {
    * @param  {[type]}   user user
    * @param  {Function} done callback when done
    */
-  importPhotosFromConnector : function(user, connectorName, done){
+  importPhotosFromConnector : function(user, connectorName, options, done){
     User.findById(user._id, function(err, user){
       if (err || !user) return done(err);
 
@@ -120,28 +119,19 @@ var importer = {
       if (!connector || !connector.importNewPhotos)
         return done(new Error("No import connector found with name " + connectorName));
 
-      function restart(results){
-        connector.importNewPhotos(user, function(err, photos){
-          if (err) console.debug('import err: ', err);
-          else console.debug('import done, found: ' + (photos && photos.length || 0));
-          
+      connector.importNewPhotos(user, options, function(err, photos){
+        if (err) console.debug('import err: ', err);
+        else console.debug('import done, found: ' + (photos && photos.length || 0));
+        
+        if (err) return done(err);
+        if (!photos || !photos.length) return done();
+        var next = photos.next;
+
+        return importer.savePhotos(user, photos, function(err, photos){
           if (err) return done(err);
-          if (!photos || !photos.length) return done(null, results);
-
-          return importer.savePhotos(user, photos, function(err, photos){
-            if (err) return console.debug('error:' + err) && done(err);
-            results = results.concat(photos);
-            if (photos.length && results.length < 100){
-              // as long as we get photos we continue reading until we reach the higher limit
-              restart(results);
-            } else{
-              done(err, results);
-            }
-
-          });
+          done(null, photos, next);
         });
-      }
-      restart([]);
+      });
 
     });
   },

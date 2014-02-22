@@ -12,7 +12,6 @@ var ObjectId = require('mongoose').Types.ObjectId,
     _ = require('lodash'),
     clusterfck = require('clusterfck'),
     interestingnessCalculator = PhotoCopy.interestingnessCalculator;
-    mongoose = require('mongoose');
 
 function Clusterer(user, done){
   var self = this;
