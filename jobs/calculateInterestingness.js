@@ -78,8 +78,6 @@ module.exports = function(done){
     model.find(function(err, photos){
       if (err || !photos || !photos.length) return done(err, photos);
 
-        console.log(photos.slice(0,10))
-
       async.map(photos, function(photo, done){
         var userId = photo._id.split('/')[0];
         var photoId = photo._id.split('/')[1];

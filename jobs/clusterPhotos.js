@@ -34,7 +34,7 @@ function Clusterer(user, done){
     var groups = Clusterer.extractGroups(user, photos, 100);
     var savedPhotos = groups.reduce(function(a, group){
       var rankedGroup = Clusterer.rankGroupPhotos(group);
-      rankedGroup.user = user._id;
+      rankedGroup.userId = user._id;
       a.concat(Clusterer.saveGroupPhotos(rankedGroup));
       return a;
     }, []);
@@ -68,6 +68,7 @@ function Clusterer(user, done){
 
 Clusterer.extractGroups = function(user, photos, nrClusters){
 
+  console.debug('clustering ' + photos.length + ' photos to ' + nrClusters + ' clusters');
   if (!photos.length) return [];
 
   var vectors = photos.map(function(photo){
@@ -92,8 +93,12 @@ Clusterer.extractGroups = function(user, photos, nrClusters){
     group.photos = _.compact(cluster);
     return group;
   });
+  
+  groups = _.compact(groups);
 
-  return _.compact(groups);
+  console.debug('done, ' + groups.length + ' clusters created');
+
+  return groups;
 };
 
 Clusterer.rankGroupPhotos = function(group, nrClusters){
@@ -146,7 +151,11 @@ Clusterer.saveGroupPhotos = function(group){
     setter.$set['modified'] = new Date();
 
     i++;
-    Photo.update({_id : photo._id}, setter, {upsert: true});
+    Photo.update({_id : photo._id}, setter, {upsert: true}, function(err,nr){
+      if (err) { 
+        throw err;
+      }
+    });
     return photo;
 
   });
