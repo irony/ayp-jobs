@@ -58,11 +58,6 @@ module.exports = function(user, done){
 
     });
 
-    if (photos.length){
-      user.maxRank = rank;
-      user.save();
-    }
-
     return done(err, user);
 
   });

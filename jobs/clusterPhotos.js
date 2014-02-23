@@ -34,6 +34,7 @@ function Clusterer(user, done){
     var groups = Clusterer.extractGroups(user, photos, 100);
     var savedPhotos = groups.reduce(function(a, group){
       var rankedGroup = Clusterer.rankGroupPhotos(group);
+      rankedGroup.user = user._id;
       a.concat(Clusterer.saveGroupPhotos(rankedGroup));
       return a;
     }, []);
@@ -87,7 +88,7 @@ Clusterer.extractGroups = function(user, photos, nrClusters){
   var clusters = vectors && clusterfck.kmeans(vectors.filter(function(a){return a}), nrClusters) || [];
   var groups = clusters.map(function(cluster){
     var group = new Group();
-    group.user = user;
+    group.userId = user;
     group.photos = _.compact(cluster);
     return group;
   });
@@ -129,7 +130,7 @@ Clusterer.rankGroupPhotos = function(group, nrClusters){
 Clusterer.saveGroupPhotos = function(group){
   var i = 1;
 
-  if (!group.user) throw new Error("User is not set on group");
+  if (!group.userId) throw new Error("UserId is not set on group");
   group.photos = group.photos.map(function(photo){
     if (photo.oldCluster && photo.cluster === photo.oldCluster) {
       return null;
@@ -138,10 +139,10 @@ Clusterer.saveGroupPhotos = function(group){
     var setter = {$set : {}};
     //var clusterRank = 100 - (i / group.photos.length) * 100;
 
-    setter.$set['copies.' + group.user + '.clusterOrder'] = i;
-    setter.$set['copies.' + group.user + '.interestingness'] = photo.interestingness;
+    setter.$set['copies.' + group.userId + '.clusterOrder'] = i;
+    setter.$set['copies.' + group.userId + '.interestingness'] = photo.interestingness;
     // + clusterRank + (photo.interestingness); // || Math.floor(Math.random()*100)); // ) + photo.boost;
-    setter.$set['copies.' + group.user + '.cluster'] = photo.cluster;
+    setter.$set['copies.' + group.userId + '.cluster'] = photo.cluster;
     setter.$set['modified'] = new Date();
 
     i++;
