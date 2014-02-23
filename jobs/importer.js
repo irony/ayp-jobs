@@ -92,8 +92,9 @@ var importer = {
     async.mapLimit(photos, 20, function(photo, next){
 
       console.debug('Saving photo %s', photo.path, photo.client_mtime, photo.taken, photo.bytes);
+      var _user = user;
 
-      importer.findOrInitPhoto(user, photo, function(err, photo){
+      importer.findOrInitPhoto(_user, photo, function(err, photo){
 
         photo.save(function(err, photo){
           next(err, photo);
