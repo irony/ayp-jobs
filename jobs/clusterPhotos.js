@@ -20,7 +20,7 @@ function Clusterer(user, done){
 
   // find all their photos and sort them on interestingness
   Photo.find({'owners': user._id}, 'taken copies.' + user._id + '.calculatedVote copies.' + user._id + '.vote')
-  .where('copies.' + user._id + '.cluster').exists(false)
+//  .where('copies.' + user._id + '.cluster').exists(false)
   // .where('copies.' + user._id + '.clusterOrder').exists(false)
   .sort({ taken : -1 })
   .exec(function(err, photos){
