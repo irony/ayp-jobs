@@ -33,7 +33,7 @@ var downloader = {
 
         var connector = connectors[photo.source];
 
-        if (connector.downloadOriginal && user.accounts[photo.source]) {
+        if (connector && connector.downloadOriginal && user.accounts[photo.source]) {
           
           console.debug('Downloading %s %s from %s', options.thumbnail && "thumbnail", options.original && "and original" || "", photo.source);
           async.parallel({
