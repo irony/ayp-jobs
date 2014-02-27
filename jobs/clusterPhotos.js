@@ -8,7 +8,6 @@ var ObjectId = require('mongoose').Types.ObjectId,
     User = require('AllYourPhotosModels').user,
     Group = require('AllYourPhotosModels').group,
     async = require('async'),
-    emit = {}, // fool jsLint
     _ = require('lodash'),
     clusterfck = require('clusterfck'),
     interestingnessCalculator = PhotoCopy.interestingnessCalculator;
@@ -31,15 +30,16 @@ function Clusterer(user, done){
       if (!photo.copies[user._id]) photo.copies[user._id] = {};
     });
 
-    var groups = Clusterer.extractGroups(user, photos, 100);
-    var savedPhotos = groups.reduce(function(a, group){
-      var rankedGroup = Clusterer.rankGroupPhotos(group);
-      rankedGroup.userId = user._id;
-      a.concat(Clusterer.saveGroupPhotos(rankedGroup));
-      return a;
-    }, []);
-
-    return done(null, savedPhotos.length ? user : null);
+    Group.find({userId:user._id}).remove(function(){
+      var groups = Clusterer.extractGroups(user, photos, 100);
+      var savedPhotos = groups.reduce(function(a, group){
+        var rankedGroup = Clusterer.rankGroupPhotos(group);
+        rankedGroup.userId = user._id;
+        a.concat(Clusterer.saveGroupPhotos(rankedGroup));
+        return a;
+      }, []);
+      return done(null, savedPhotos.length ? user : null);
+    });
 
   });
 }
@@ -89,8 +89,9 @@ Clusterer.extractGroups = function(user, photos, nrClusters){
   var clusters = vectors && clusterfck.kmeans(vectors.filter(function(a){return a}), nrClusters) || [];
   var groups = clusters.map(function(cluster){
     var group = new Group();
-    group.userId = user;
+    group.userId = user._id;
     group.photos = _.compact(cluster);
+    console.log('groupPhotos', group.photos);
     return group;
   });
   
@@ -123,7 +124,7 @@ Clusterer.rankGroupPhotos = function(group, nrClusters){
           return photo;
         });
         
-        // subCluster.forEach(function(photo){console.log(photo._id)})
+        //subCluster.forEach(function(photo){console.log(photo.cluster, photo.taken, photo._id)})
         return subCluster;
 
       });
@@ -152,15 +153,21 @@ Clusterer.saveGroupPhotos = function(group){
 
     i++;
     Photo.update({_id : photo._id}, setter, {upsert: true}, function(err,nr){
-      if (err) { 
+      if (err) {
         throw err;
       }
+      console.debug('save clustered photo done');
     });
     return photo;
 
   });
 
-  group.photos = _.compact(group.photos);
+  group.photos = _.compact(group.photos).sort();
+  group.from = group.photos[0];
+  group.to = group.photos[group.photos.length-1];
+  group.save(function(){
+    console.debug('group saved');
+  });
   
   if (!group.photos.length) return null;
   return group;
