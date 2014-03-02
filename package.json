@@ -5,15 +5,15 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha test -R spec"
   },
   "repository": "",
   "author": "",
   "license": "BSD",
-  "peerDependencies" : {
+  "peerDependencies": {
     "nconf": "*"
   },
-  "dependencies" : {
+  "dependencies": {
     "AllYourPhotosModels": "irony/ayp-models@0.0.0",
     "lodash": "*",
     "mongoose": "*",
@@ -23,5 +23,9 @@
     "require-dir": "~0.1.0",
     "clusterfck": "~0.5.2",
     "blitline": "~1.1.6"
+  },
+  "devDependencies": {
+    "should": "~3.1.3",
+    "supertest": "~0.9.0"
   }
 }

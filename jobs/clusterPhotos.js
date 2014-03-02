@@ -32,13 +32,17 @@ function Clusterer(user, done){
 
     Group.find({userId:user._id}).remove(function(){
       var groups = Clusterer.extractGroups(user, photos, 100);
-      var savedPhotos = groups.reduce(function(a, group){
+      var savedPhotos = async.reduce(groups, [], function(a, group){
         var rankedGroup = Clusterer.rankGroupPhotos(group);
         rankedGroup.userId = user._id;
-        a.concat(Clusterer.saveGroupPhotos(rankedGroup));
+        Clusterer.saveGroupPhotos(rankedGroup, function(group){
+          if (group) a.concat(group.photos);
+          done(a);
+        });
         return a;
-      }, []);
-      return done(null, savedPhotos.length ? user : null);
+      }, function(err, savedPhotos){
+        return done(null, savedPhotos.length ? user : null);
+      });
     });
 
   });
@@ -133,11 +137,11 @@ Clusterer.rankGroupPhotos = function(group, nrClusters){
     return group;
 };
 
-Clusterer.saveGroupPhotos = function(group){
+Clusterer.saveGroupPhotos = function(group, done){
   var i = 1;
 
   if (!group.userId) throw new Error("UserId is not set on group");
-  group.photos = group.photos.map(function(photo){
+  async.map(group.photos, function(photo, next) {
     if (photo.oldCluster && photo.cluster === photo.oldCluster) {
       return null;
     }
@@ -150,27 +154,21 @@ Clusterer.saveGroupPhotos = function(group){
     // + clusterRank + (photo.interestingness); // || Math.floor(Math.random()*100)); // ) + photo.boost;
     setter.$set['copies.' + group.userId + '.cluster'] = photo.cluster;
     setter.$set['modified'] = new Date();
-
     i++;
+
     Photo.update({_id : photo._id}, setter, {upsert: true}, function(err,nr){
-      if (err) {
-        throw err;
-      }
-      console.debug('save clustered photo done');
+      next(err,photo);
     });
-    return photo;
+  }, function(err, photos){
 
+    group.photos = _.compact(group.photos).sort();
+    group.from = group.photos[0];
+    group.to = group.photos[group.photos.length-1];
+    group.save(function(){
+      done(photos.length && group || null);
+    });
   });
 
-  group.photos = _.compact(group.photos).sort();
-  group.from = group.photos[0];
-  group.to = group.photos[group.photos.length-1];
-  group.save(function(){
-    console.debug('group saved');
-  });
-  
-  if (!group.photos.length) return null;
-  return group;
 
 };
 
