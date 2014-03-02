@@ -5,7 +5,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "test": "mocha test -R spec"
+    "test": "mocha tests -R spec"
   },
   "repository": "",
   "author": "",
