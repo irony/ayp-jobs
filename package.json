@@ -14,7 +14,7 @@
     "nconf": "*"
   },
   "dependencies": {
-    "AllYourPhotosModels": "irony/ayp-models@0.0.0",
+    "AllYourPhotosModels": "irony/ayp-models",
     "lodash": "*",
     "mongoose": "*",
     "redis": "*",
