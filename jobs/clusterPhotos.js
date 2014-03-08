@@ -95,7 +95,6 @@ Clusterer.extractGroups = function(user, photos, nrClusters){
     var group = new Group();
     group.userId = user._id;
     group.photos = _.compact(cluster);
-    console.log('groupPhotos', group.photos);
     return group;
   });
   
