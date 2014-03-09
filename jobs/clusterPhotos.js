@@ -32,14 +32,13 @@ function Clusterer(user, done){
 
     Group.find({userId:user._id}).remove(function(){
       var groups = Clusterer.extractGroups(user, photos, 100);
-      var savedPhotos = async.reduce(groups, [], function(a, group){
+      var savedPhotos = async.reduce(groups, [], function(a, group, next){
         var rankedGroup = Clusterer.rankGroupPhotos(group);
         rankedGroup.userId = user._id;
         Clusterer.saveGroupPhotos(rankedGroup, function(group){
           if (group) a.concat(group.photos);
-          done(a);
+          next(null, a);
         });
-        return a;
       }, function(err, savedPhotos){
         return done(null, savedPhotos.length ? user : null);
       });
@@ -164,6 +163,7 @@ Clusterer.saveGroupPhotos = function(group, done){
     group.from = group.photos[0];
     group.to = group.photos[group.photos.length-1];
     group.save(function(){
+      console.log('saved group:', group._id);
       done(photos.length && group || null);
     });
   });
