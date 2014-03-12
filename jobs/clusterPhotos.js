@@ -18,7 +18,11 @@ function Clusterer(user, done){
   if (!done) throw new Error("Callback is mandatory");
 
   // find all their photos and sort them on interestingness
+<<<<<<< Updated upstream
   Photo.find({'owners': user._id}, 'taken copies.' + user._id + ' store')
+=======
+  Photo.find({'owners': user._id}, 'taken copies.' + user._id)
+>>>>>>> Stashed changes
 //  .where('copies.' + user._id + '.cluster').exists(false)
   // .where('copies.' + user._id + '.clusterOrder').exists(false)
   .sort({ taken : -1 })
@@ -31,6 +35,7 @@ function Clusterer(user, done){
     });
 
     var groups = Clusterer.extractGroups(user, photos, 100);
+<<<<<<< Updated upstream
 
     var rankedGroups = groups.reduce(function(a, group){
       var rankedGroup = Clusterer.rankGroupPhotos(group);
@@ -42,11 +47,23 @@ function Clusterer(user, done){
     }, []);
 
     done(null, rankedGroups);
+=======
+    groups.map(function(group){
+      var rankedGroup = Clusterer.rankGroupPhotos(group);
+      rankedGroup.userId = user._id;
+      return rankedGroup;
+    });
+>>>>>>> Stashed changes
+
+    return done(null, groups);
 
   });
 }
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 /**
  * Take two array (or more) and weave them together into one array so that [1,2,3,4] + [1,2,3,4] => [1,1,2,2,3,3,4,4]
  * @param  {[type]} a [description]
@@ -132,26 +149,48 @@ Clusterer.rankGroupPhotos = function(group, nrClusters){
 
       });
       // console.debug('..done');
-    group.photos = Clusterer.weave(subClusters);
+    console.log(subClusters[0]);
+    group.photos = _.flatten(Clusterer.weave(subClusters));
+    console.log(group.photos[0]);
     return group;
 };
 
+Clusterer.findOldGroup = function(group, done){
+  var oldGroups = group.photos.reduce(function(a,b){
+    if (b.oldCluster) {
+      var groupId = b.oldCluster.split('.')[0];
+      a[groupId] = (a[groupId] || 0) + 1;
+    }
+    return a;
+  }, {});
+
+  var oldGroup = Object.keys(oldGroups).sort(function(a, b){
+    return oldGroups[a] - oldGroups[b];
+  }).pop();
+
+  if (!oldGroup) return done();
+
+  Group.findOne({_id : oldGroup}, done);
+}
+
 Clusterer.saveGroupPhotos = function(group, done){
-  var i = 1;
 
   if (!group.userId) throw new Error("UserId is not set on group");
+<<<<<<< Updated upstream
   async.map(group.photos, function(photo, next) {
+=======
+  
+  var i = 1;
+  
+  Clusterer.findOldGroup(group, function(err, oldGroup){
+>>>>>>> Stashed changes
 
-    var setter = {$set : {}};
-    //var clusterRank = 100 - (i / group.photos.length) * 100;
+    async.mapLimit(group.photos, 10, function(photo, next) {
 
-    setter.$set['copies.' + group.userId + '.clusterOrder'] = i;
-    setter.$set['copies.' + group.userId + '.interestingness'] = photo.interestingness;
-    // + clusterRank + (photo.interestingness); // || Math.floor(Math.random()*100)); // ) + photo.boost;
-    setter.$set['copies.' + group.userId + '.cluster'] = photo.cluster;
-    setter.$set['modified'] = new Date();
-    i++;
+      var setter = {$set : {}};
+      //var clusterRank = 100 - (i / group.photos.length) * 100;
 
+<<<<<<< Updated upstream
     Photo.update({_id : photo._id}, setter, function(err,nr){
       next(err,photo);
     });
@@ -165,8 +204,33 @@ Clusterer.saveGroupPhotos = function(group, done){
       done(photos.length && group || null);
     });
   });
+=======
+      setter.$set['copies.' + group.userId + '.clusterOrder'] = i;
+      setter.$set['copies.' + group.userId + '.interestingness'] = photo.interestingness;
+      // + clusterRank + (photo.interestingness); // || Math.floor(Math.random()*100)); // ) + photo.boost;
+      setter.$set['copies.' + group.userId + '.cluster'] = photo.cluster;
+      setter.$set['modified'] = new Date();
+      i++;
+>>>>>>> Stashed changes
 
+      Photo.update({_id : photo._id}, setter, function(err,nr){
+        if (err) throw err;
+        next(err,photo);
+      });
+    }, function(err, photos){
 
+      group.photos = _.compact(group.photos).sort();
+      group.from = group.photos[0].taken;
+      group.to = group.photos[group.photos.length-1].taken;
+
+      Group.findOneAndUpdate({ _id: oldGroup && oldGroup._id}, group, {upsert:true}, function(err, updatedGroup){
+        console.log('saved group:', group.from, group.to, updatedGroup &&  updatedGroup._id);
+        done(err, photos.length && group || null);
+      });
+
+    });
+
+  });
 };
 
 module.exports = Clusterer;
