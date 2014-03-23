@@ -161,10 +161,9 @@ Clusterer.saveGroupPhotos = function(group, done){
   Clusterer.findOldGroup(group, function(err, oldGroup){
     if (!oldGroup) oldGroup = new Group(group);
 
-    var i = 1;
 
     if (!group.userId) throw new Error("UserId is not set on group");
-    async.map(group.photos, function(photo, next) {
+    async.map(group.photos, function(photo, next, i) {
 
       var setter = {$set : {}};
       //var clusterRank = 100 - (i / group.photos.length) * 100;
@@ -174,14 +173,13 @@ Clusterer.saveGroupPhotos = function(group, done){
       // + clusterRank + (photo.interestingness); // || Math.floor(Math.random()*100)); // ) + photo.boost;
       setter.$set['copies.' + group.userId + '.cluster'] = photo.cluster;
       setter.$set['modified'] = new Date();
-      i++;
 
       Photo.update({_id : photo._id}, setter, function(err,nr){
         next(err,photo);
       });
     }, function(err, photos){
       oldGroup.photos = _.pluck(group.photos, 'taken');
-      var orderedPhotos = oldGroup.photos.sort();
+      var orderedPhotos = oldGroup.photos.slice().sort();
       oldGroup.from = orderedPhotos[0];
       oldGroup.to = orderedPhotos[orderedPhotos.length-1];
       oldGroup.save(function(){
