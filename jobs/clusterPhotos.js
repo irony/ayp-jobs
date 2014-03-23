@@ -180,6 +180,8 @@ Clusterer.saveGroupPhotos = function(group, done){
       setter.$set['modified'] = new Date();
       i++;
 
+      if (photo.oldCluster === photo.cluster) return next(null, photo);
+
       Photo.update({_id : photo._id}, setter, function(err,nr){
         next(err,photo);
       });
