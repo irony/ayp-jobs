@@ -91,8 +91,9 @@ Clusterer.extractGroups = function(user, photos, nrClusters){
   });
 
   var clusters = vectors && clusterfck.kmeans(vectors.filter(function(a){return a}), nrClusters) || [];
-  var groups = clusters.map(function(cluster){
-    var group = new Group();
+  var groups = clusters.map(function(cluster,i){
+    var group = {};
+    group.value = i;
     group.userId = user._id;
     group.photos = _.compact(cluster);
     return group;
@@ -120,7 +121,8 @@ Clusterer.rankGroupPhotos = function(group, nrClusters){
         }).map(function(vector, i){
           var photo = {taken : vector[0]};
           photo.oldCluster = vector.cluster;
-          photo.cluster=group._id + "." + subGroup + "." + i;
+          photo._id = vector._id;
+          photo.cluster=group.value + "." + subGroup + "." + i;
           photo.boost = Math.floor(subCluster.length * 5 / (1+i*2)); // first photos of big clusters get boost
           photo.interestingness = Math.floor(photo.boost + Math.max(0, 100 - (i/subCluster.length) * 100));
           // photo.interestingness = Math.floor(photo.boost + (photo.interestingness || 0));
@@ -157,34 +159,41 @@ Clusterer.findOldGroup = function(group, done){
 
 
 Clusterer.saveGroupPhotos = function(group, done){
-
   Clusterer.findOldGroup(group, function(err, oldGroup){
+
     if (!oldGroup) oldGroup = new Group(group);
 
+    // TODO: serialize old and new to check for changes
 
     if (!group.userId) throw new Error("UserId is not set on group");
-    async.map(group.photos, function(photo, next, i) {
+    if (!group.photos.length) throw new Error("Group photos is empty");
+
+    var i = 0;
+    async.map(group.photos, function(photo, next) {
 
       var setter = {$set : {}};
-      //var clusterRank = 100 - (i / group.photos.length) * 100;
-
+      photo.order = i;
       setter.$set['copies.' + group.userId + '.clusterOrder'] = i;
       setter.$set['copies.' + group.userId + '.interestingness'] = photo.interestingness;
       // + clusterRank + (photo.interestingness); // || Math.floor(Math.random()*100)); // ) + photo.boost;
       setter.$set['copies.' + group.userId + '.cluster'] = photo.cluster;
       setter.$set['modified'] = new Date();
+      i++;
 
       Photo.update({_id : photo._id}, setter, function(err,nr){
         next(err,photo);
       });
     }, function(err, photos){
-      oldGroup.photos = _.pluck(group.photos, 'taken');
-      var orderedPhotos = oldGroup.photos.slice().sort();
-      oldGroup.from = orderedPhotos[0];
-      oldGroup.to = orderedPhotos[orderedPhotos.length-1];
+      group.photos.sort(function(a,b){
+        return a.order - b.order;
+      });
+      oldGroup.photos = _.pluck(group.photos, '_id');
+      var taken = _.pluck(group.photos, 'taken').sort();
+      oldGroup.from = taken[0];
+      oldGroup.to = taken[taken.length-1];
       oldGroup.save(function(){
         console.log('saved group:', oldGroup._id);
-        done(null, photos.length && oldGroup || null);
+        done(null, oldGroup);
       });
     });
   });

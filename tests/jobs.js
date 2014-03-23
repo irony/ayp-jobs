@@ -10,18 +10,19 @@ nconf
 
 
 var should = require("should");
-var mongoose = require('mongoose');
 var async = require('async');
 var request = require('supertest');
 var fs = require('fs');
 var _ = require('lodash');
 
 // Models
-var Models = require('AllYourPhotosModels');
+var Models = require('AllYourPhotosModels').init();
 var ShareSpan = Models.sharespan;
 var User = Models.user;
 var Photo = Models.photo;
+var Group = Models.group;
 var auth = Models.auth;
+var ObjectId = require('mongoose').Types.ObjectId;
 
 var port = 3333;
 process.env.PORT = port;
@@ -65,7 +66,7 @@ describe("jobs", function(){
     it("should rank each group", function(done){
 
       var format = function(groups){
-        return _(groups).flatten().pluck('_id').compact().sortBy().value();
+        return _(groups).flatten().pluck('value').compact().sortBy().value();
       };
 
       var groups = clusterer.extractGroups(userA, photos, 10);
@@ -102,7 +103,7 @@ describe("jobs", function(){
       this.timeout(20000);
 
       photos.forEach(function(photo, length, i){
-        photo._id = i;
+        photo._id = new ObjectId();
         photo.taken = new Date(new Date(photo.taken).getTime() + Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 25));
       });
 
@@ -120,7 +121,7 @@ describe("jobs", function(){
       this.timeout(2000);
 
       photos.forEach(function(photo, i){
-        photo._id = i;
+        photo._id = new ObjectId();
         photo.taken = new Date(new Date(photo.taken).getTime() + Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 25));
       });
 
@@ -144,10 +145,10 @@ describe("jobs", function(){
 
     it("should extract cluster and interestingness from empty photos", function(done){
 
-      this.timeout(2000);
 
       var emptyPhotos = photos.map(function(photo, i){
-        var emptyPhoto = {_id : i};
+        var emptyPhoto = {};
+        emptyPhoto._id = new ObjectId();
         emptyPhoto.taken = new Date(new Date(photo.taken).getTime() + Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 25));
         return emptyPhoto;
       });
@@ -172,7 +173,7 @@ describe("jobs", function(){
 
     it("should save a group", function(done){
 
-      var i = 0;
+      this.timeout(5000);
 
       // check for duplicates
       photos.sort(function(a,b){return a._id - b._id}).reduce(function(a,b){a._id.should.not.eql(b._id); return b});
@@ -188,24 +189,37 @@ describe("jobs", function(){
 
 
       var setters = {};
-      Photo.update = function(key, setter){
-        should.ok(!setters[key._id], key._id + ' already exists');
-        setters[key._id] = setter;
+
+      clusterer.findOldGroup = function(group, done){
+        console.log('save')
+        group.save = function(done) {done()};
+        done(group);
       };
 
-      group.photos.reduce(function(a,b){a._id.should.not.eql(b._id); return b});
+      Photo.update = function(key, setter, done){
+        should.ok(!setters[key._id], key._id + ' already exists');
+        setters[key._id] = setter;
+        done();
+      };
 
-      clusterer.saveGroupPhotos(group, function(group){
+      group.photos.reduce(function(a,b){
+        should.ok(a._id);
+        a._id.should.not.eql(b._id); 
+        return b
+      });
+
+      clusterer.saveGroupPhotos(group, function(err, group){
+        if (err) throw err;
         should.ok(group);
         group.photos.length.should.eql(total);
-        async.map(group.photos, function(photo, done){
-          should.ok(photo.cluster);
-          var setter = setters[photo._id];
-          should.ok(setter);
+        setters.should.not.eql({});
+
+        async.map(group.photos, function(photoId, done){
+          var setter = setters[photoId];
+          should.ok(setter, "couldnt find " + photoId);
           //setter.should.eql(group.user);
           should.ok(setter['$set']);
-          should.ok(setter['$set']['copies.' + group.user + '.cluster']);
-          setter['$set']['copies.' + group.user + '.cluster'].should.eql(photo.cluster);
+          should.ok(setter['$set']['copies.' + group.userId + '.cluster']);
           done();
         }, function(){
           done();
