@@ -1,38 +1,35 @@
 // Cluster photos with k-means
 // ===
 
-var ObjectId = require('mongoose').Types.ObjectId,
 
-    Photo = require('AllYourPhotosModels').photo,
+var Photo = require('AllYourPhotosModels').photo,
     PhotoCopy = require('AllYourPhotosModels').photoCopy,
-    User = require('AllYourPhotosModels').user,
+    ObjectId = require('mongoose').Types.ObjectId,
     Group = require('AllYourPhotosModels').group,
     async = require('async'),
     _ = require('lodash'),
     clusterfck = require('clusterfck'),
     interestingnessCalculator = PhotoCopy.interestingnessCalculator;
 
-function Clusterer(user, done){
-  var self = this;
-
-  if (!done) throw new Error("Callback is mandatory");
+function Clusterer(user, done) {
+  if (!done) throw new Error('Callback is mandatory');
 
   // find all their photos and sort them on interestingness
   Photo.find({'owners': user._id}, 'taken copies.' + user._id + ' store')
 //  .where('copies.' + user._id + '.cluster').exists(false)
   // .where('copies.' + user._id + '.clusterOrder').exists(false)
   .sort({ taken : -1 })
-  .exec(function(err, photos){
+  .exec(function (err, photos) {
     if (err || !photos || !photos.length) return done(err);
 
-    photos.forEach(function(photo){
+    photos.forEach(function (photo) {
       if (!photo.copies) photo.copies = {};
       if (!photo.copies[user._id]) photo.copies[user._id] = {};
     });
 
     var groups = Clusterer.extractGroups(user, photos, 100);
 
-    var rankedGroups = groups.reduce(function(a, group){
+    var rankedGroups = groups.reduce(function (a, group) {
       var rankedGroup = Clusterer.rankGroupPhotos(group);
       rankedGroup.userId = user._id;
       //console.log('group', rankedGroup.photos);
@@ -53,29 +50,29 @@ function Clusterer(user, done){
  * @param  {[type]} b [description]
  * @return {[type]}   [description]
  */
-Clusterer.weave = function(a,b){
+Clusterer.weave = function () {
   var arrays = Array.prototype.slice.call(arguments.length === 1 ? arguments[0] : arguments);
   var maxLength = Math.max.apply(Math, arrays.map(function (el) { return el.length; }));
 
   if (isNaN(maxLength)) return arrays[0].length && arrays[0] || arrays; // no need to weave one single array
 
   var result = [];
-  for(var i=0; i<maxLength; i++){
+  for (var i = 0; i < maxLength; i++) {
     var position = i;
-    _.each(arrays, function(array){
-        if(array[position]) result.push(array[position]);
+    _.each(arrays, function (array) {
+      if (array[position]) result.push(array[position]);
     });
   }
   return result;
-}
+};
 
 
-Clusterer.extractGroups = function(user, photos, nrClusters){
+Clusterer.extractGroups = function (user, photos, nrClusters) {
 
   console.debug('clustering ' + photos.length + ' photos to ' + nrClusters + ' clusters');
   if (!photos.length) return [];
 
-  var vectors = photos.map(function(photo){
+  var vectors = photos.map(function (photo) {
     
     var vector = [photo.taken.getTime()]; // this is where the magic happens
 
@@ -90,8 +87,8 @@ Clusterer.extractGroups = function(user, photos, nrClusters){
     return vector;
   });
 
-  var clusters = vectors && clusterfck.kmeans(vectors.filter(function(a){return a}), nrClusters) || [];
-  var groups = clusters.map(function(cluster,i){
+  var clusters = vectors && clusterfck.kmeans(vectors.filter(function (a) {return a}), nrClusters) || [];
+  var groups = clusters.map(function (cluster,i) {
     var group = {};
     group.value = i;
     group.userId = user._id;
@@ -106,42 +103,42 @@ Clusterer.extractGroups = function(user, photos, nrClusters){
   return groups;
 };
 
-Clusterer.rankGroupPhotos = function(group, nrClusters){
-    //var subClusters = utils.cluster(group.photos, nrClusters);
-    var subClusters = clusterfck.kmeans(group.photos, nrClusters);
-    
-    subClusters = subClusters
-      .sort(function(a,b){
-        return b.length - a.length; // sort the arrays bigger first, more value toeacho we get the smallest clusters first - less risk of double shots from the same cluster
-      })
-      .map(function(subCluster, subGroup){
+Clusterer.rankGroupPhotos = function (group, nrClusters) {
+  //var subClusters = utils.cluster(group.photos, nrClusters);
+  var subClusters = clusterfck.kmeans(group.photos, nrClusters);
+  
+  subClusters = subClusters
+    .sort(function (a, b) {
+      return b.length - a.length; // sort the arrays bigger first, more value toeacho we get the smallest clusters first - less risk of double shots from the same cluster
+    })
+    .map(function (subCluster, subGroup) {
 
-        subCluster = subCluster.sort(function(a,b){
-          return b.interestingness - a.interestingness;
-        }).map(function(vector, i){
-          var photo = {taken : vector[0]};
-          photo.oldCluster = vector.cluster;
-          photo._id = vector._id;
-          photo.cluster=group.value + "." + subGroup + "." + i;
-          photo.boost = Math.floor(subCluster.length * 5 / (1+i*2)); // first photos of big clusters get boost
-          photo.interestingness = Math.floor(photo.boost + Math.max(0, 100 - (i/subCluster.length) * 100));
-          // photo.interestingness = Math.floor(photo.boost + (photo.interestingness || 0));
-          // || Math.floor(Math.random()*100)); // ) + photo.boost;
-          return photo;
-        });
-        // subCluster.forEach(function(photo){console.log(photo.cluster, photo.taken, photo._id)})
-        return subCluster;
-
+      subCluster = subCluster.sort(function (a,b) {
+        return b.interestingness - a.interestingness;
+      }).map(function (vector, i) {
+        var photo = {taken : vector[0]};
+        photo.oldCluster = vector.cluster;
+        photo._id = vector._id;
+        photo.cluster=group.value + '.' + subGroup + '.' + i;
+        photo.boost = Math.floor(subCluster.length * 5 / (1+i*2)); // first photos of big clusters get boost
+        photo.interestingness = Math.floor(photo.boost + Math.max(0, 100 - (i/subCluster.length) * 100));
+        // photo.interestingness = Math.floor(photo.boost + (photo.interestingness || 0));
+        // || Math.floor(Math.random()*100)); // ) + photo.boost;
+        return photo;
       });
-      // console.debug('..done');
-    group.photos = Clusterer.weave(subClusters);
-    return group;
+      // subCluster.forEach(function (photo) {console.log(photo.cluster, photo.taken, photo._id)})
+      return subCluster;
+
+    });
+    // console.debug('..done');
+  group.photos = Clusterer.weave(subClusters);
+  return group;
 };
 
 
-Clusterer.findOldGroup = function(group, done){
+Clusterer.findOldGroup = function (group, done) {
   // count occurrance of old groups
-  var oldGroups = group.photos.reduce(function(a,b){
+  var oldGroups = group.photos.reduce(function (a,b) {
     if (b.oldCluster) {
       var groupId = b.oldCluster.split('.')[0];
       a[groupId] = (a[groupId] || 0) + 1;
@@ -149,28 +146,31 @@ Clusterer.findOldGroup = function(group, done){
     return a;
   }, {});
 
-  var oldGroup = Object.keys(oldGroups).sort(function(a, b){
+  var oldGroup = Object.keys(oldGroups).sort(function (a, b) {
     return oldGroups[a] - oldGroups[b];
   }).pop();
 
   if (!oldGroup) return done();
 
   Group.findOne({ value : oldGroup, userId: group.userId }, done);
-}
+};
 
 
-Clusterer.saveGroupPhotos = function(group, done){
-  Clusterer.findOldGroup(group, function(err, oldGroup){
+Clusterer.saveGroupPhotos = function (group, done) {
+  Clusterer.findOldGroup(group, function (err, oldGroup) {
 
-    if (!oldGroup) oldGroup = new Group(group);
+    if (!oldGroup) oldGroup = new Group();
+    oldGroup.value = group.value;
+    oldGroup.userId = group.userId;
+    oldGroup.modified = new Date();
 
     // TODO: serialize old and new to check for changes
 
-    if (!group.userId) throw new Error("UserId is not set on group");
-    if (!group.photos.length) throw new Error("Group photos is empty");
+    if (!group.userId) throw new Error('UserId is not set on group');
+    if (!group.photos.length) throw new Error('Group photos is empty');
 
     var i = 0;
-    async.map(group.photos, function(photo, next) {
+    async.map(group.photos, function (photo, next) {
 
       var setter = {$set : {}};
       photo.order = i;
@@ -178,23 +178,28 @@ Clusterer.saveGroupPhotos = function(group, done){
       setter.$set['copies.' + group.userId + '.interestingness'] = photo.interestingness;
       // + clusterRank + (photo.interestingness); // || Math.floor(Math.random()*100)); // ) + photo.boost;
       setter.$set['copies.' + group.userId + '.cluster'] = photo.cluster;
-      setter.$set['modified'] = new Date();
+      setter.$set.modified = new Date();
       i++;
 
       if (photo.oldCluster === photo.cluster) return next(null, photo);
 
-      Photo.update({_id : photo._id}, setter, function(err,nr){
-        next(err,photo);
-      });
-    }, function(err, photos){
-      group.photos.sort(function(a,b){
+      Photo.update({_id : photo._id}, setter, next);
+    }, function (err) {
+      
+      if (err) throw err;
+
+      group.photos.sort(function (a,b) {
         return a.order - b.order;
       });
-      oldGroup.photos = _.pluck(group.photos, '_id');
+      oldGroup.photos = _.pluck(group.photos, '_id').map(function(id){return id.toString();});
       var taken = _.pluck(group.photos, 'taken').sort();
       oldGroup.from = taken[0];
       oldGroup.to = taken[taken.length-1];
-      oldGroup.save(function(){
+
+      oldGroup.save(function (err) {
+        if (err) throw err;
+
+        console.log('saving done', oldGroup._id);
         done(null, oldGroup);
       });
     });
