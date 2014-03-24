@@ -140,6 +140,7 @@ Clusterer.rankGroupPhotos = function(group, nrClusters){
 
 
 Clusterer.findOldGroup = function(group, done){
+  // count occurrance of old groups
   var oldGroups = group.photos.reduce(function(a,b){
     if (b.oldCluster) {
       var groupId = b.oldCluster.split('.')[0];
@@ -194,7 +195,6 @@ Clusterer.saveGroupPhotos = function(group, done){
       oldGroup.from = taken[0];
       oldGroup.to = taken[taken.length-1];
       oldGroup.save(function(){
-        console.log('saved group:', oldGroup._id);
         done(null, oldGroup);
       });
     });
