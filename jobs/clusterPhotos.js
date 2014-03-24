@@ -154,7 +154,7 @@ Clusterer.findOldGroup = function(group, done){
 
   if (!oldGroup) return done();
 
-  Group.findOne({_id : oldGroup}, done);
+  Group.findOne({ value : oldGroup, userId: group.userId }, done);
 }
 
 

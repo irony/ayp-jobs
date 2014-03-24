@@ -191,7 +191,6 @@ describe("jobs", function(){
       var setters = {};
 
       clusterer.findOldGroup = function(group, done){
-        console.log('save')
         group.save = function(done) {done()};
         done(group);
       };
