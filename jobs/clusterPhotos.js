@@ -162,7 +162,6 @@ Clusterer.saveGroupPhotos = function (group, done) {
     if (!oldGroup) oldGroup = new Group();
     oldGroup.value = group.value;
     oldGroup.userId = group.userId;
-    oldGroup.modified = new Date();
 
     // TODO: serialize old and new to check for changes
 
@@ -195,6 +194,7 @@ Clusterer.saveGroupPhotos = function (group, done) {
       var taken = _.pluck(group.photos, 'taken').sort();
       oldGroup.from = taken[0];
       oldGroup.to = taken[taken.length-1];
+      oldGroup.modified = new Date();
 
       oldGroup.save(function (err) {
         if (err) throw err;
