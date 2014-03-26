@@ -135,33 +135,43 @@ Clusterer.rankGroupPhotos = function (group, nrClusters) {
   return group;
 };
 
+/*
+        old:
+           ----         ------
+        new:
+        ----  ---  -  ---  - --  --
+        ---------------------------
 
-Clusterer.findOldGroup = function (group, done) {
-  // count occurrance of old groups
-  var oldGroups = group.photos.reduce(function (a,b) {
-    if (b.oldCluster) {
-      var groupId = b.oldCluster.split('.')[0];
-      a[groupId] = (a[groupId] || 0) + 1;
-    }
-    return a;
-  }, {});
-
-  var oldGroup = Object.keys(oldGroups).sort(function (a, b) {
-    return oldGroups[a] - oldGroups[b];
-  }).pop();
-
-  if (!oldGroup) return done();
-
-  Group.findOne({ value : oldGroup, userId: group.userId }, done);
+        old.from > group.from && old.from < group.to
+        old.to > group.from && old.to < group.to
+        old.from < group.from && old.to > group.to
+*/
+Clusterer.removeOldGroups = function (group, done) {
+  if (!group.from || !group.to) return done();
+  Group.find({
+    userId: group.userId,
+    // and?
+    $or: [
+      {from: {$gte : group.from, $lte: group.to}},
+      {to: {$gte : group.from, $lte: group.to}},
+      {from: {$lte: group.from}, to: { $gte : group.to}}
+    ]
+  })
+  .remove(done);
 };
 
 
 Clusterer.saveGroupPhotos = function (group, done) {
-  Clusterer.findOldGroup(group, function (err, oldGroup) {
+  var taken = _.pluck(group.photos, 'taken').sort();
+  group.from = taken[0];
+  group.to = taken[taken.length-1];
 
-    if (!oldGroup) oldGroup = new Group();
-    oldGroup.value = group.value;
-    oldGroup.userId = group.userId;
+  Clusterer.removeOldGroups(group, function (err) {
+    if (err) throw err;
+
+    var newGroup = new Group();
+    newGroup.value = group.value;
+    newGroup.userId = group.userId;
 
     // TODO: serialize old and new to check for changes
 
@@ -190,17 +200,15 @@ Clusterer.saveGroupPhotos = function (group, done) {
       group.photos.sort(function (a,b) {
         return a.order - b.order;
       });
-      oldGroup.photos = _.pluck(group.photos, '_id').map(function(id){return id.toString();});
-      var taken = _.pluck(group.photos, 'taken').sort();
-      oldGroup.from = taken[0];
-      oldGroup.to = taken[taken.length-1];
-      oldGroup.modified = new Date();
+      newGroup.photos = _.pluck(group.photos, '_id').map(function(id){return id.toString();});
+      
+      newGroup.modified = new Date();
 
-      oldGroup.save(function (err) {
+      newGroup.save(function (err) {
         if (err) throw err;
 
-        console.log('saving done', oldGroup._id);
-        done(null, oldGroup);
+        console.log('saving done', newGroup._id);
+        done(null, newGroup);
       });
     });
   });

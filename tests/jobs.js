@@ -9,7 +9,7 @@ nconf
   .file({file: 'config.json', dir:'../../', search: true});
 
 
-var should = require("should");
+var should = require('should');
 var async = require('async');
 var request = require('supertest');
 var fs = require('fs');
@@ -33,9 +33,9 @@ var app; // inits in integration tests
 
 // disgard debug output
  console.debug = function(){};
-describe("jobs", function(){
+describe('jobs', function(){
 
-  var photos = require("./fixtures/photos").photos;
+  var photos = require('./fixtures/photos').photos;
   var userA = new User();
 
   before(function(){
@@ -46,9 +46,9 @@ describe("jobs", function(){
     });
   });
 
-  describe("clusterer", function(){
-    var clusterer = require("../").clusterPhotos;
-    it("should extract photo groups", function(done){
+  describe('clusterer', function(){
+    var clusterer = require('../').clusterPhotos;
+    it('should extract photo groups', function(done){
       var groups = clusterer.extractGroups(userA, photos, 10);
 
       should.ok(groups);
@@ -63,7 +63,7 @@ describe("jobs", function(){
     });
 
 
-    it("should rank each group", function(done){
+    it('should rank each group', function(done){
 
       var format = function(groups){
         return _(groups).flatten().pluck('value').compact().sortBy().value();
@@ -95,7 +95,7 @@ describe("jobs", function(){
     });
 
 
-    it("should extract photo groups from 10 000 photos", function(done){
+    it('should extract photo groups from 10 000 photos', function(done){
       while(photos.length< 10000){
         photos = photos.concat(JSON.parse(JSON.stringify(photos)));
       }
@@ -116,7 +116,7 @@ describe("jobs", function(){
 
     });
 
-     it("should extract photo groups and subgroups from 10 000 photos", function(done){
+     it('should extract photo groups and subgroups from 10 000 photos', function(done){
 
       this.timeout(2000);
 
@@ -143,7 +143,7 @@ describe("jobs", function(){
 
     });
 
-    it("should extract cluster and interestingness from empty photos", function(done){
+    it('should extract cluster and interestingness from empty photos', function(done){
 
 
       var emptyPhotos = photos.map(function(photo, i){
@@ -171,7 +171,7 @@ describe("jobs", function(){
 
     });
 
-    it("should save a group", function(done){
+    it('should save a group', function(done){
 
       this.timeout(5000);
 
@@ -190,11 +190,6 @@ describe("jobs", function(){
 
       var setters = {};
 
-      clusterer.findOldGroup = function(group, done){
-        group.save = function(done) {done()};
-        done(group);
-      };
-
       Photo.update = function(key, setter, done){
         should.ok(!setters[key._id], key._id + ' already exists');
         setters[key._id] = setter;
@@ -203,8 +198,8 @@ describe("jobs", function(){
 
       group.photos.reduce(function(a,b){
         should.ok(a._id);
-        a._id.should.not.eql(b._id); 
-        return b
+        a._id.should.not.eql(b._id);
+        return b;
       });
 
       clusterer.saveGroupPhotos(group, function(err, group){
@@ -215,7 +210,7 @@ describe("jobs", function(){
 
         async.map(group.photos, function(photoId, done){
           var setter = setters[photoId];
-          should.ok(setter, "couldnt find " + photoId);
+          should.ok(setter, 'couldnt find ' + photoId);
           //setter.should.eql(group.user);
           should.ok(setter['$set']);
           should.ok(setter['$set']['copies.' + group.userId + '.cluster']);
@@ -225,6 +220,84 @@ describe("jobs", function(){
         });
       });
 
+    });
+
+    it('should delete one old group with included timespan', function(done){
+      var group = new Group();
+      group.to = new Date();
+      group.from = group.to.setMonth(group.to.getMonth()-5);
+      group.save(function(err){
+        if (err) throw err;
+        group.to.setMonth(group.to.getMonth()+1);
+        group.from.setMonth(group.from.getMonth()-1);
+        clusterer.removeOldGroups(group,function(err, nr){
+          if (err) throw err;
+          nr.should.be.above(0);
+          done();
+        });
+      });
+    });
+    
+    it('should delete one old group with partially included timespan', function(done){
+      var group = new Group();
+      group.to = new Date();
+      group.from = group.to.setMonth(group.to.getMonth()-5);
+      group.save(function(err){
+        if (err) throw err;
+        group.to.setMonth(group.from.getMonth()+1);
+        group.from.setMonth(group.from.getMonth()-10);
+        clusterer.removeOldGroups(group,function(err, nr){
+          if (err) throw err;
+          nr.should.be.above(0);
+          done();
+        });
+      });
+    });
+
+    it('should not delete old group with excluded timespan', function(done){
+      var group = new Group();
+      group.to = new Date();
+      group.from = group.to.setMonth(group.to.getMonth()-5);
+      group.save(function(err){
+        if (err) throw err;
+        group.to.setMonth(group.from.getMonth()-5);
+        group.from.setMonth(group.from.getMonth()-10);
+        clusterer.removeOldGroups(group,function(err, nr){
+          if (err) throw err;
+          nr.should.be.eql(0);
+          done();
+        });
+      });
+    });
+    
+    
+
+    it('should delete all old groups', function(done){
+      this.timeout(15000);
+
+      Group.remove().exec(function(){
+        Photo.update = function(key, setter, done){done();};
+
+        var groups = clusterer.extractGroups(userA, photos.slice(0,200), 10).sort(function(a,b){return b.length - a.length});
+        async.map(groups, function(group, next){
+          clusterer.saveGroupPhotos(group, next);
+        }, function(err, savedGroups){
+          if (err) throw err;
+          savedGroups.should.have.length(groups.length);
+
+          var secondGroups = clusterer.extractGroups(userA, photos.slice(0,200), 5).sort(function(a,b){return b.length - a.length});
+          async.map(secondGroups, function(group, next){
+            clusterer.saveGroupPhotos(group, next);
+          }, function(err, savedGroups){
+            if (err) throw err;
+            savedGroups.should.have.length(secondGroups.length);
+            Group.find().count(function(err, count){
+              count.should.eql(secondGroups.length);
+              done();
+            });
+          });
+        });
+      });
     });
 
   });
