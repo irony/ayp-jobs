@@ -38,7 +38,10 @@ function Clusterer(user, done) {
 
     }, []);
 
-    done(null, rankedGroups);
+    // TODO: remove this line
+    Group.remove({userId : user._id}, function(){
+      done(null, rankedGroups);
+    });
 
   });
 }
