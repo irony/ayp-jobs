@@ -96,8 +96,9 @@ Clusterer.extractGroups = function (user, photos, nrClusters) {
     group.value = i;
     group.userId = user._id;
     group.photos = _.compact(cluster);
+    group.date = group.photos[0];
     return group;
-  });
+  }).sort(function(a,b){return a.date - b.date; });
   
   groups = _.compact(groups);
 
@@ -209,8 +210,6 @@ Clusterer.saveGroupPhotos = function (group, done) {
 
       newGroup.save(function (err) {
         if (err) throw err;
-
-        console.log('saving done', newGroup._id);
         done(null, newGroup);
       });
     });

@@ -61,11 +61,15 @@ var importer = {
       dbPhoto.markModified('copies');
       // dbPhoto.metadata = _.extend(dbPhoto.metadata || {}, photo);
 
-      if (photo.store)
+      if (photo.store){
         dbPhoto.store = _.extend(dbPhoto.store || {}, photo.store);
+        dbPhoto.markModified('store');
+      }
 
-      if (photo.exif)
+      if (photo.exif){
         dbPhoto.exif = _.extend(dbPhoto.exif || {}, photo.exif);
+        dbPhoto.markModified('exif');
+      }
 
       dbPhoto.taken = photo.taken;
 
