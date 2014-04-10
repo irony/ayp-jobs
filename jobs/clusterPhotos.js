@@ -183,6 +183,8 @@ Clusterer.saveGroupPhotos = function (group, done) {
     if (!group.photos.length) throw new Error('Group photos is empty');
 
     var i = 0;
+    var now = new Date();
+    
     async.map(group.photos, function (photo, next) {
 
       var setter = {$set : {}};
@@ -191,7 +193,7 @@ Clusterer.saveGroupPhotos = function (group, done) {
       setter.$set['copies.' + group.userId + '.interestingness'] = photo.interestingness;
       // + clusterRank + (photo.interestingness); // || Math.floor(Math.random()*100)); // ) + photo.boost;
       setter.$set['copies.' + group.userId + '.cluster'] = photo.cluster;
-      setter.$set.modified = new Date();
+      setter.$set.modified = now;
       i++;
 
       if (photo.oldCluster === photo.cluster) return next(null, photo);
@@ -206,7 +208,7 @@ Clusterer.saveGroupPhotos = function (group, done) {
       });
       newGroup.photos = _.pluck(group.photos, '_id').map(function(id){return id.toString();});
       
-      newGroup.modified = new Date();
+      newGroup.modified = now;
 
       newGroup.save(function (err) {
         if (err) throw err;
