@@ -22,12 +22,21 @@ function Clusterer(user, done) {
   .exec(function (err, photos) {
     if (err || !photos || !photos.length) return done(err);
 
+    var lastPhoto;
+    var groupCount;
     photos.forEach(function (photo) {
       if (!photo.copies) photo.copies = {};
       if (!photo.copies[user._id]) photo.copies[user._id] = {};
+
+      // default number of groups when there are very few photos are one group per day
+      if (lastPhoto && Math.abs(lastPhoto.taken - photo.taken) > 8 * 60 * 60 * 1000) {
+        groupCount++;
+      }
+      lastPhoto = photo;
     });
 
-    var groups = Clusterer.extractGroups(user, photos, 100);
+    // TODO: find better default number for groups or use hierarchy instead
+    var groups = Clusterer.extractGroups(user, photos, Math.min(groupCount, 100));
 
     var rankedGroups = groups.reduce(function (a, group) {
       var rankedGroup = Clusterer.rankGroupPhotos(group);
