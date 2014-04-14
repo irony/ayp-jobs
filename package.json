@@ -22,7 +22,8 @@
     "nconf": "*",
     "require-dir": "~0.1.0",
     "clusterfck": "~0.5.2",
-    "blitline": "~1.1.6"
+    "blitline": "~1.1.6",
+    "multiparty": "*"
   },
   "devDependencies": {
     "should": "~3.2.0-beta1",
