@@ -78,6 +78,27 @@ Clusterer.weave = function () {
   return result;
 };
 
+// returns a summary of the changes in two arrays
+Clusterer.diff = function (a,b,id, merge){
+  var oldIds = id && _.pluck(a, id) || a;
+  var newIds = id && _.pluck(b, id) || b;
+
+  var insert = _.difference(newIds, oldIds);
+  var remove = _.difference(oldIds, newIds);
+  var summary = {
+    insert    : _.filter(b, function(item){return insert.indexOf(item.id) > -1; }),
+    remove    : _.filter(a, function(item){return remove.indexOf(item.id) > -1; })
+  };
+  
+  if (merge){
+    summary.remainder = _.filter(a, function(item){return remove.indexOf(item.id) === -1; });
+    summary.merged = summary.insert.concat(summary.remainder);
+  }
+
+  return summary;
+};
+
+
 
 Clusterer.extractGroups = function (user, photos, nrClusters) {
 
@@ -159,18 +180,18 @@ Clusterer.rankGroupPhotos = function (group, nrClusters) {
         old.to > group.from && old.to < group.to
         old.from < group.from && old.to > group.to
 */
-Clusterer.removeOldGroups = function (group, done) {
+Clusterer.findOldGroup = function (group, done) {
   if (!group.from || !group.to) return done();
-  Group.find({
-    userId: group.userId,
-    // and?
-    $or: [
-      {from: {$gte : group.from, $lte: group.to}},
+  Group.findOne({})
+    .where('userId', group.userId)
+    .where('_id', group._id).exec(done);
+//    $or: [
+//      {_id: group._id}
+/*        {from: {$gte : group.from, $lte: group.to}},
       {to: {$gte : group.from, $lte: group.to}},
-      {from: {$lte: group.from}, to: { $gte : group.to}}
-    ]
-  })
-  .remove(done);
+      {from: {$lte: group.from}, to: { $gte : group.to}},*/
+//    ]
+  //}, done);
 };
 
 
@@ -179,8 +200,10 @@ Clusterer.saveGroupPhotos = function (group, done) {
   group.from = taken[0];
   group.to = taken[taken.length-1];
 
-  Clusterer.removeOldGroups(group, function (err) {
+  Clusterer.findOldGroup(group, function (err, oldGroup) {
     if (err) throw err;
+
+    // console.log(Clusterer.diff(group.photos, oldGroup.photos));
 
     var newGroup = new Group();
     newGroup.value = group.value;

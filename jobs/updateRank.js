@@ -23,7 +23,7 @@ module.exports = function(user, done){
     if (err) throw err;
 
     photos.sort(function(a,b){
-      return a.copies[user._id].interestingness - b.copies[user._id].interestingness;
+      return (a.copies[user._id] && a.copies[user._id].interestingness || 0) - (b.copies[user._id] && b.copies[user._id].interestingness || 0);
     });
   
     var rank = 0;

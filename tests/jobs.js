@@ -1,7 +1,10 @@
 // run tests locally or with test collection
 var nconf = require('nconf');
 nconf.overrides({
-  mongoUrl : 'mongodb://localhost/ayp-test'
+  mongoUrl : 'mongodb://localhost/ayp-test',
+  redis: {
+    'host': 'localhost'
+  },
 });
 
 nconf
@@ -16,7 +19,7 @@ var fs = require('fs');
 var _ = require('lodash');
 
 // Models
-var Models = require('AllYourPhotosModels').init();
+var Models = require('AllYourPhotosModels').init(nconf);
 var ShareSpan = Models.sharespan;
 var User = Models.user;
 var Photo = Models.photo;
@@ -222,7 +225,7 @@ describe('jobs', function(){
 
     });
 
-    it('should delete one old group with included timespan', function(done){
+    it('should find one old group with included timespan', function(done){
       var group = new Group();
       group.to = new Date();
       group.from = group.to.setMonth(group.to.getMonth()-5);
@@ -230,15 +233,15 @@ describe('jobs', function(){
         if (err) throw err;
         group.to.setMonth(group.to.getMonth()+1);
         group.from.setMonth(group.from.getMonth()-1);
-        clusterer.removeOldGroups(group,function(err, nr){
+        clusterer.findOldGroup(group,function(err, oldGroup){
           if (err) throw err;
-          nr.should.be.above(0);
+          oldGroup._id.should.eql(group._id);
           done();
         });
       });
     });
     
-    it('should delete one old group with partially included timespan', function(done){
+    it('should find one old group with partially included timespan', function(done){
       var group = new Group();
       group.to = new Date();
       group.from = group.to.setMonth(group.to.getMonth()-5);
@@ -246,9 +249,9 @@ describe('jobs', function(){
         if (err) throw err;
         group.to.setMonth(group.from.getMonth()+1);
         group.from.setMonth(group.from.getMonth()-10);
-        clusterer.removeOldGroups(group,function(err, nr){
+        clusterer.findOldGroup(group,function(err, oldGroup){
           if (err) throw err;
-          nr.should.be.above(0);
+          oldGroup._id.should.eql(group._id);
           done();
         });
       });
@@ -262,9 +265,26 @@ describe('jobs', function(){
         if (err) throw err;
         group.to.setMonth(group.from.getMonth()-5);
         group.from.setMonth(group.from.getMonth()-10);
-        clusterer.removeOldGroups(group,function(err, nr){
+        clusterer.findOldGroup(group,function(err, groups){
           if (err) throw err;
-          nr.should.be.eql(0);
+          groups.length.should.be.eql(0);
+          done();
+        });
+      });
+    });
+
+
+    it('should not update unchanged group', function(done){
+      var group = new Group();
+      group.photos = [new ObjectId(),new ObjectId(),new ObjectId(),new ObjectId(),new ObjectId(),new ObjectId()];
+      group.userId = new ObjectId();
+      group.save(function(err, group){
+        console.log(group);
+        if (err) throw err;
+        clusterer.findOldGroup(group,function(err, oldGroup){
+          if (err) throw err;
+          should.ok(oldGroup);
+          oldGroup._id.should.eql(group._id);
           done();
         });
       });
@@ -272,7 +292,7 @@ describe('jobs', function(){
     
     
 
-    it('should delete all old groups', function(done){
+    it('should update all old groups', function(done){
       this.timeout(15000);
 
       Group.remove().exec(function(){
