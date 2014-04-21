@@ -64,7 +64,7 @@ module.exports = function(done){
     // update all included photos with the new groups
     model.find(function(err, groups){
       async.map(groups, function(group, done){
-        Photo.findOneAndUpdate({_id : group.value}, {$set : {groups : group._id.toString().split('/')}}, {safe:true}, done);
+        Photo.findOneAndUpdate({_id : group.index}, {$set : {groups : group._id.toString().split('/')}}, {safe:true}, done);
       }, done);
     });
   });

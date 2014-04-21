@@ -21,13 +21,17 @@
     "async": "*",
     "nconf": "*",
     "require-dir": "~0.1.0",
-    "clusterfck": "~0.5.2",
+    "clusterfck": "primaryobjects/clusterfck",
     "blitline": "~1.1.6",
     "multiparty": "*"
   },
   "devDependencies": {
     "should": "~3.2.0-beta1",
     "supertest": "~0.9.0",
-    "mocha": "~1.18.2"
+    "mocha": "~1.18.2",
+    "grunt": "~0.4.4",
+    "grunt-simple-mocha": "~0.4.0",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-mocha-test": "~0.10.2"
   }
 }
