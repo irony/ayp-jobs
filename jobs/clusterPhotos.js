@@ -109,7 +109,7 @@ Clusterer.extractGroups = function (user, photos, nrClusters, done) {
   Cluster.findOne({userId: user._id}, function(err, cluster){
 
     var kmeans = clusterfck.kmeans;
-    if (cluster) kmeans.fromJSON(cluster.centroids); // initialize
+    if (cluster) kmeans = kmeans.fromJSON(cluster.centroids); // initialize
     else {
       cluster = new Cluster();
     }
@@ -133,6 +133,7 @@ Clusterer.extractGroups = function (user, photos, nrClusters, done) {
     cluster.save(function(err){
       done(err, groups);
     });
+    kmeans.centroids = null;
 
     console.debug('done, ' + groups.length + ' clusters created');
   });
@@ -159,9 +160,10 @@ Clusterer.classify = function (user, photos, done) {
 
     var vectors = photos.map(function(photo){ return getVector(photo,user);});
     clusterfck.kmeans.fromJSON(snapshot.centroids); // initialize with existing centroid
-    var affectedGroups = vectors.reduce(function(affectedGroups, vector){
+    var affectedGroups = vectors.reduce(function(affectedGroups, vector, i){
       var index = clusterfck.kmeans.classify(vector);
       var group = snapshot.groups[index];
+      photos[i].cluster = index;
       group.photos.push(vector);
       if (affectedGroups.indexOf(group) < 0) affectedGroups.push(group);
       return affectedGroups;
@@ -179,7 +181,8 @@ Clusterer.classify = function (user, photos, done) {
 
 Clusterer.rankGroupPhotos = function (group, nrClusters) {
   //var subClusters = utils.cluster(group.photos, nrClusters);
-  var subClusters = clusterfck.kmeans(group.photos, nrClusters);
+  var kmeans = clusterfck.kmeans.fromJSON(group.centroids || null);
+  var subClusters = kmeans(group.photos, nrClusters);
   
   subClusters = subClusters
     .sort(function (a, b) {

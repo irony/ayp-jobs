@@ -90,10 +90,10 @@ describe('jobs', function(){
 
         rankedGroups.sort(function(a,b){return b.photos.length - a.photos.length});
         should.ok(rankedGroups[0].photos[0].cluster);
-        rankedGroups[0].photos[2].boost.should.be.below(rankedGroups[0].photos[0].boost);
-        rankedGroups[1].photos[2].boost.should.be.below(rankedGroups[0].photos[0].boost);
-        rankedGroups[2].photos[2].boost.should.be.below(rankedGroups[0].photos[0].boost);
-        rankedGroups[3].photos[2].boost.should.be.below(rankedGroups[0].photos[0].boost);
+        rankedGroups[0].photos[5].boost.should.be.below(rankedGroups[0].photos[0].boost);
+        rankedGroups[1].photos[5].boost.should.be.below(rankedGroups[0].photos[0].boost);
+        rankedGroups[2].photos[5].boost.should.be.below(rankedGroups[0].photos[0].boost);
+        rankedGroups[3].photos[5].boost.should.be.below(rankedGroups[0].photos[0].boost);
         rankedGroups[0].photos.slice(-1)[0].boost.should.be.below(10);
 
         return done();
@@ -180,11 +180,10 @@ describe('jobs', function(){
 
       clusterer.extractGroups(userA, photos, 100, function(err, groups){
         groups.sort(function(a,b){return b.length - a.length});
-        var total = groups[0].photos.length;
         groups.length.should.be.above(5);
-
-        var group = clusterer.rankGroupPhotos(groups[0], 5);
-        group.photos.length.should.eql(total);
+        var group = groups[0];
+        var rankedGroup = clusterer.rankGroupPhotos(group, 5);
+        rankedGroup.photos.length.should.eql(group.photos.length);
 
 
         var setters = {};
@@ -204,7 +203,6 @@ describe('jobs', function(){
         clusterer.saveGroupPhotos(group, function(err, group){
           if (err) throw err;
           should.ok(group);
-          group.photos.length.should.eql(total);
           setters.should.not.eql({});
 
           async.map(group.photos, function(photoId, done){
@@ -221,33 +219,55 @@ describe('jobs', function(){
       });
     });
     
-    it('should save clusters to cluster collection', function(done){
-      clusterer.extractGroups(userA, photos, 30, function(){
-        Cluster.findOne({userId: userA._id}, function(err, cluster){
+    describe('additions', function(){
+      var groups;
+      var newPhoto;
+      beforeEach(function(done){
+        clusterer.extractGroups(userA, photos, 30, function(err, _groups){
           if (err) throw err;
+          groups = _groups;
+          newPhoto = _.clone(groups[3].photos[0]);
+          newPhoto.taken = groups[3].photos[0].taken;
+          done();
+        });
+      });
+
+      it('should save clusters to cluster collection', function(done){
+        Cluster.findOne({userId: userA._id}, function(err, cluster){
           should.ok(cluster);
           cluster.centroids.length.should.be.above(0);
           done();
         });
       });
-    });
 
-    it('should be able to classify new photos to existing groups', function(done){
-      clusterer.extractGroups(userA, photos, 30, function(err, groups){
-        if (err) throw err;
-        var newPhoto = photos[0];
-        newPhoto._id = 'new';
-        photos.push(_.clone(newPhoto));
+      it('should be able to classify new photos to existing groups', function(done){
+        this.timeout(300);
         clusterer.classify(userA, [newPhoto], function(err, affectedGroups){
           if (err) throw err;
           affectedGroups.length.should.eql(1);
+          var affectedGroup = affectedGroups[0];
+          console.log('newphoto', newPhoto);
+          affectedGroup.photos.slice(-1)[0].taken.should.eql(newPhoto.taken);
+          //group.index.should.eql(3);
+          //groups[group.index].photos.length.should.eql(group.photos.length-1);
+          done();
+        });
+      });
+
+      it('should be able to rank a modified group', function(done){
+        this.timeout(300);
+        clusterer.classify(userA, [newPhoto], function(err, affectedGroups){
           var group = affectedGroups[0];
-          groups[group.index].photos.length.should.eql(group.photos.length-1);
+          var ranked = clusterer.rankGroupPhotos(group, 10);
+          should.ok(ranked);
+          ranked.photos.slice(-1)[0].should.not.eql(newPhoto);
+          ranked.photos.map(function(photo){
+            photo.cluster.split('.').length.should.be.above(2);
+          });
           done();
         });
       });
     });
-
   });
 
 });
