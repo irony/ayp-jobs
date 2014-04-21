@@ -260,7 +260,7 @@ Clusterer.saveGroupPhotos = function (group, done) {
       Photo.update({_id : photo._id}, setter, next);
     }, function (err) {
       
-      if (err) throw err;
+      if (err) return done(err);
 
       group.photos.sort(function (a,b) {
         return a.order - b.order;
@@ -270,7 +270,7 @@ Clusterer.saveGroupPhotos = function (group, done) {
       newGroup.modified = now;
 
       newGroup.save(function (err) {
-        if (err) throw err;
+        if (err) return done(err);
         done(null, newGroup);
       });
     });
