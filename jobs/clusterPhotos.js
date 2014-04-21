@@ -170,9 +170,7 @@ Clusterer.classify = function (user, photos, done) {
     }, []);
 
     snapshot.markModified('groups');
-    snapshot.markModified('centroids');
     snapshot.modified = new Date();
-    snapshot.centroids = clusterfck.kmeans.toJSON();
     snapshot.save(function(err){
       done(err, affectedGroups);
     });
@@ -224,16 +222,7 @@ Clusterer.rankGroupPhotos = function (group, nrClusters) {
         old.from < group.from && old.to > group.to
 */
 Clusterer.findOldGroup = function (group, done) {
-  if (!group.from || !group.to) return done();
-  Group.findOne({})
-  .where('userId', group.userId)
-  .where('index', group.index)
-  .or([
-    {from: {$gte : group.from, $lte: group.to}},
-    {to: {$gte : group.from, $lte: group.to}},
-    {from: {$lte: group.from}, to: { $gte : group.to}}
-  ])
-  .exec(done);
+  Group.findOne({userId: group.userId, index:group.index}, done);
 };
 
 
@@ -243,23 +232,19 @@ Clusterer.saveGroupPhotos = function (group, done) {
   group.to = taken[taken.length-1];
 
   Clusterer.findOldGroup(group, function (err, oldGroup) {
-    if (err) throw err;
+    if (err) return done(err);
 
-    if (oldGroup) console.log(Clusterer.diff(group.photos, oldGroup.photos));
+    var newGroup = oldGroup || new Group({ from:group.from, to: group.to, userId: group.userId});
 
-    var newGroup = new Group();
-    newGroup.index = group.index;
-    newGroup.userId = group.userId;
-
-    // TODO: serialize old and new to check for changes
-
-    if (!group.userId) throw new Error('UserId is not set on group');
-    if (!group.photos.length) throw new Error('Group photos is empty');
+    if (!group.userId) return done(new Error('UserId is not set on group'));
+    if (!group.photos.length) return done(new Error('Group photos is empty'));
 
     var i = 0;
     var now = new Date();
     
     async.map(group.photos, function (photo, next) {
+
+      if (photo.cluster === photo.oldCluster) return next();
 
       var setter = {$set : {}};
       photo.order = i;

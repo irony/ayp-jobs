@@ -246,10 +246,18 @@ describe('jobs', function(){
           if (err) throw err;
           affectedGroups.length.should.eql(1);
           var affectedGroup = affectedGroups[0];
-          console.log('newphoto', newPhoto);
           affectedGroup.photos.slice(-1)[0].taken.should.eql(newPhoto.taken);
           //group.index.should.eql(3);
           //groups[group.index].photos.length.should.eql(group.photos.length-1);
+          done();
+        });
+      });
+
+      it('should be able to classify many photos to existing groups', function(done){
+        this.timeout(300);
+        clusterer.classify(userA, photos, function(err, affectedGroups){
+          if (err) throw err;
+          affectedGroups.length.should.eql(30);
           done();
         });
       });
@@ -260,10 +268,28 @@ describe('jobs', function(){
           var group = affectedGroups[0];
           var ranked = clusterer.rankGroupPhotos(group, 10);
           should.ok(ranked);
-          ranked.photos.slice(-1)[0].should.not.eql(newPhoto);
           ranked.photos.map(function(photo){
             photo.cluster.split('.').length.should.be.above(2);
           });
+          var found = ranked.photos.some(function(photo){
+            return new Date(photo.taken).getTime() === new Date(newPhoto.taken).getTime();
+          });
+          return found.should.be.true && done();
+        });
+      });
+
+      it('should be able to identify modified photos', function(done){
+        this.timeout(300);
+        clusterer.classify(userA, [newPhoto], function(err, affectedGroups){
+          var group = affectedGroups[0];
+          var ranked = clusterer.rankGroupPhotos(group, 10);
+          should.ok(ranked);
+          ranked.photos.slice(-1)[0].should.not.eql(newPhoto);
+          var changed = ranked.photos.reduce(function(a, photo){
+            a = a + photo.cluster !== photo.oldCluster ? 1 : 0;
+            return a;
+          }, 0);
+          changed.should.eql(1);
           done();
         });
       });
