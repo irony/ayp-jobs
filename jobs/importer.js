@@ -108,25 +108,39 @@ var importer = {
     }, done);
   },
 
-  waitForMore : function(user, done){
+  waitForMoreFromUser : function(user, done){
     User.findById(user._id, function(err, user){
       importer.getAllImportConnectorsForUser(user, function(err, connectorNames){
-        var connected = connectorNames.reduce(function(connected, connectorName){
-          var connector = connectors[connectorName];
-          console.log(connector);
-          if (connector.wait){
-            console.debug('Waiting for new photos at %s for %s', connectorName, user.displayName);
-            connector.wait(user, function(err, changed){
-              console.debug('Found change at %s', connector, changed, err);
-              done(err, changed);
-            });
-            connected++;
-          }
-          return connected;
-        }, 0);
-
-        if (!connected) done('No connectors supporting wait');
+        connectorNames.forEach(function(connectorName){
+          importer.waitForMoreFromConnector(user, connectorName, done);
+        });
       });
+    });
+  },
+
+  /**
+   * Wait for changes in a particular connector for a user. If the connector isn't supporting 
+   * realtime changes it will immediately return false and let a scheduler take care of scheduling
+   * fetching of new changes instead.
+   * @param  {[type]}   user          plain user object
+   * @param  {[type]}   connectorName name of connector, for example: 'dropbox'
+   * @param  {Function} done          callback which will receive three arguments: err, changed and connectorName
+   * @return {[type]}                 [description]
+   */
+  waitForMoreFromConnector : function(user, connectorName, done){
+    User.findById(user._id, function(err, user){
+      var connector = connectors[connectorName];
+      if (connector.wait){
+        console.debug('Waiting for new photos at %s for %s', connectorName, user._id);
+        connector.wait(user, function(err, changed){
+          console.debug('Found change at %s', connectorName, changed, err);
+          done(err, changed, connectorName);
+        });
+      } else {
+        // returns true here to signal the scheduler to manually fetch new photos..
+        console.debug('No wait feature for ' + connectorName + ' returning...');
+        return done(null, false, connectorName);
+      }
     });
   },
   
