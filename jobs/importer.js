@@ -107,6 +107,28 @@ var importer = {
 
     }, done);
   },
+
+  waitForMore : function(user, done){
+    User.findById(user._id, function(err, user){
+      importer.getAllImportConnectorsForUser(user, function(err, connectorNames){
+        var connected = connectorNames.reduce(function(connected, connectorName){
+          var connector = connectors[connectorName];
+          console.log(connector);
+          if (connector.wait){
+            console.debug('Waiting for new photos at %s for %s', connectorName, user.displayName);
+            connector.wait(user, function(err, changed){
+              console.debug('Found change at %s', connector, changed, err);
+              done(err, changed);
+            });
+            connected++;
+          }
+          return connected;
+        }, 0);
+
+        if (!connected) done('No connectors supporting wait');
+      });
+    });
+  },
   
   /**
    * Downloads and saves metadata for all connectors of the provided user
