@@ -108,13 +108,12 @@ Clusterer.extractGroups = function (user, photos, nrClusters, done) {
 
   Cluster.findOne({userId: user._id}, function(err, cluster){
 
-    var kmeans = clusterfck.kmeans;
-    if (cluster) kmeans = kmeans.fromJSON(cluster.centroids); // initialize
-    else {
+    var kmeans = new clusterfck.kmeans(cluster && cluster.centroids || []);
+    if (!cluster){
       cluster = new Cluster();
     }
 
-    var clusters = vectors && clusterfck.kmeans(vectors.filter(function (a) {return a}), nrClusters) || [];
+    var clusters = vectors && kmeans.train(vectors.filter(function (a) {return a}), nrClusters) || [];
     var groups = clusters.map(function (cluster,i) {
       var group = {};
       group.index = i;
@@ -126,14 +125,13 @@ Clusterer.extractGroups = function (user, photos, nrClusters, done) {
     groups = _.compact(groups);
     cluster.groups = groups;
     cluster.userId = user._id;
-    cluster.centroids = kmeans.toJSON();
+    cluster.centroids = kmeans.centroids;
     cluster.markModified('groups');
     cluster.markModified('centroids');
     cluster.modified = new Date();
     cluster.save(function(err){
       done(err, groups);
     });
-    kmeans.centroids = null;
 
     console.debug('done, ' + groups.length + ' clusters created');
   });
@@ -159,9 +157,9 @@ Clusterer.classify = function (user, photos, done) {
     if (err || !snapshot) return done(err || new Error('No existing centroids found'));
 
     var vectors = photos.map(function(photo){ return getVector(photo,user);});
-    clusterfck.kmeans.fromJSON(snapshot.centroids); // initialize with existing centroid
+    var kmeans = new clusterfck.kmeans(snapshot.centroids);
     var affectedGroups = vectors.reduce(function(affectedGroups, vector, i){
-      var index = clusterfck.kmeans.classify(vector);
+      var index = kmeans.classify(vector);
       var group = snapshot.groups[index];
       photos[i].cluster = index;
       group.photos.push(vector);
@@ -179,8 +177,8 @@ Clusterer.classify = function (user, photos, done) {
 
 Clusterer.rankGroupPhotos = function (group, nrClusters) {
   //var subClusters = utils.cluster(group.photos, nrClusters);
-  var kmeans = clusterfck.kmeans.fromJSON(group.centroids || null);
-  var subClusters = kmeans(group.photos, nrClusters);
+  var kmeans = new clusterfck.kmeans(group.centroids || null);
+  var subClusters = kmeans.train(group.photos, nrClusters);
   
   subClusters = subClusters
     .sort(function (a, b) {

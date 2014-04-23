@@ -1,41 +1,36 @@
-// Update Rank
+// Update Location
 // ===
-// Based on interestingness get the most interesting photos and convert it to a normalized rank value
-// which can be used to filter all photos on
 
-
-var ObjectId = require('mongoose').Types.ObjectId,
-    Photo = require('AllYourPhotosModels').photo,
-    User = require('AllYourPhotosModels').user,
-    async = require('async'),
-    mongoose = require('mongoose');
-
+var Photo = require('AllYourPhotosModels').photo,
+    async = require('async');
 
 module.exports = function(user, done){
+  console.debug('starting location extraction for user', user);
 
-  if (!done) throw new Error("Callback is mandatory");
-  var affectedPhotos = 0;
-
+  if (!done) throw new Error('Callback is mandatory');
   // find all their photos and sort them on interestingness
-  Photo.find({'owners': user._id}, 'exif location')
-  .where({$exists: 'exif'})
-  .where({$not: {$exists: 'location'}})
+  Photo.find({'owners': user._id}, 'exif.gps')
+  .exists('exif.gps.GPSLongitude')
+  .exists('location', false)
+  .sort({taken : - 1})
   .exec(function(err, photos){
     if (err) throw err;
 
     console.debug('found %d photos without normalized gps', photos.length);
 
     async.map(photos, function(photo, next){
-      if (!photo || !photo.copies) return next();
-
+      console.log('before', photo.location);
       var setter = {$set : {}};
-      setter.$set['location'] = photo.location;
+      setter.$set.location = photo.getLocation();
 
-      Photo.update({_id : photo._id}, setter, {upsert: true}, function(err, nr){
-        return next(err, photo)
+      // TODO: get timezone, place names etc from google API:s
+      // https://developers.google.com/maps/documentation/timezone/
+      console.debug('saving location', setter.$set);
+      Photo.update({_id : photo._id}, setter, {upsert: false}, function(err, nr){
+        return next(err, nr);
       });
-    }, function(err, photos){
-      return done(err, user);
+    }, function(err, nrs){
+      return done(err, nrs.length);
     });
   });
 };
