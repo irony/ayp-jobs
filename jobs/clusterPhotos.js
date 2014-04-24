@@ -35,6 +35,8 @@ function Clusterer(user, done) {
       lastPhoto = photo;
     });
 
+    // groupCount should be around 24 best photos per big event
+
     Clusterer.extractGroups(user, photos, Math.min(groupCount, 100), function(err, groups){
 
       var rankedGroups = groups.reduce(function (a, group) {
@@ -154,7 +156,7 @@ var getVector = function(photo, user){
 Clusterer.classify = function (user, photos, done) {
 
   Cluster.findOne({userId: user._id}, function(err, snapshot){
-    if (err || !snapshot) return done(err || new Error('No existing centroids found'));
+    if (err || !snapshot) return done(err);
 
     var vectors = photos.map(function(photo){ return getVector(photo,user);});
     var kmeans = new clusterfck.kmeans(snapshot.centroids);
