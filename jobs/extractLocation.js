@@ -19,7 +19,6 @@ module.exports = function(user, done){
     console.debug('found %d photos without normalized gps', photos.length);
 
     async.map(photos, function(photo, next){
-      console.log('before', photo.location);
       var setter = {$set : {}};
       setter.$set.location = photo.getLocation();
 

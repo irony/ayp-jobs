@@ -21,7 +21,7 @@
     "async": "*",
     "nconf": "*",
     "require-dir": "~0.1.0",
-    "clusterfck": "primaryobjects/clusterfck#PROTOTYPE",
+    "clusterfck": "git://github.com/primaryobjects/clusterfck",
     "blitline": "~1.1.6",
     "multiparty": "*"
   },
