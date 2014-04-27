@@ -158,11 +158,11 @@ var importer = {
       var connector = connectors[connectorName];
         
       if (!connector || !connector.importNewPhotos)
-        return done(new Error("No import connector found with name " + connectorName));
+        return done(new Error('No import connector found with name ' + connectorName));
 
       connector.importNewPhotos(user, options, function(err, photos){
         if (err) console.debug('import err: ', err);
-        else console.debug('import done, found: ' + (photos && photos.length || 0));
+        else console.debug('import done, found: ' + (photos && photos.length || 0) + ', next: ' + photos.next);
         
         if (err) return done(err);
         if (!photos || !photos.length) return done();
