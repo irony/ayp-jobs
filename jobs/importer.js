@@ -151,7 +151,7 @@ var importer = {
    */
   importPhotosFromConnector : function(user, connectorName, options, done){
     User.findById(user._id, function(err, user){
-      if (err || !user) return done(err);
+      if (err || !user) return done(err || 'no user');
 
       console.debug('Importing photos from ' + user.displayName);
      
@@ -160,10 +160,15 @@ var importer = {
       if (!connector || !connector.importNewPhotos)
         return done(new Error('No import connector found with name ' + connectorName));
 
+      var timeout = setTimeout(function(){
+        done(new Error('Timeout expired')); // let the job fail so we can retry instead
+      }, 5 * 60 * 1000);
+
       connector.importNewPhotos(user, options, function(err, photos){
         if (err) console.debug('import err: ', err);
         else console.debug('import done, found: ' + (photos && photos.length || 0) + ', next: ' + photos.next);
-        
+        clearTimeout(timeout);
+
         if (err) return done(err);
         if (!photos || !photos.length) return done();
         var next = photos.next;
