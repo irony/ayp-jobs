@@ -21,7 +21,7 @@ var downloader = {
    */
   downloadPhoto : function(user, barePhoto, options, done){
 
-    if (typeof(done) !== "function") throw new Error("Callback is mandatory" + JSON.stringify(done));
+    if (typeof(done) !== 'function') throw new Error('Callback is mandatory' + JSON.stringify(done));
     if (!options || (!options.thumbnail && !options.original)) return done('No downloader defined in options');
 
     User.findById(user._id, function(err, user){
@@ -35,7 +35,12 @@ var downloader = {
 
         if (connector && connector.downloadOriginal && user.accounts[photo.source]) {
           
-          console.debug('Downloading %s %s from %s', options.thumbnail && "thumbnail", options.original && "and original" || "", photo.source);
+          console.debug('Downloading %s %s from %s', options.thumbnail && 'thumbnail', options.original && 'and original' || '', photo.source);
+          
+          var timeout = setTimeout(function(){
+            done(new Error('Timeout expired')); // let the job fail so we can retry instead
+          }, 60 * 60 * 1000);
+         
           async.parallel({
             original : function(done){
 
@@ -67,6 +72,7 @@ var downloader = {
             }
           }, function(err, result){
             if (err) return done(err);
+            clearTimeout(timeout);
 
             photo.markModified('store');
             if (options.save) photo.save(done);
@@ -83,7 +89,7 @@ var downloader = {
    * @param  {Callback} done
    */
   downloadMissingThumbnails : function(done){
-    if (!done) throw new Error("Callback is mandatory");
+    if (!done) throw new Error('Callback is mandatory');
 
     var photoQuery = Photo.find({}, 'store updated src taken source path mimeType owners')
     .where('store.thumbnail.stored').exists(false)
@@ -111,7 +117,7 @@ var downloader = {
           }
 
           if (!users || !users.length) {
-            console.debug("Didn't find any user records for any of the user ids:", photo.owners);
+            console.debug('Didn\'t find any user records for any of the user ids:', photo.owners);
             return photo.remove(done);
           }
           // We don't know which user this photo belongs to so we try to download them all
@@ -167,7 +173,7 @@ var downloader = {
    *                          }
    */
   downloadOriginals : function(done){
-    if (!done) throw new Error("Callback is mandatory");
+    if (!done) throw new Error('Callback is mandatory');
 
     var photoQuery = Photo.find({'store.lastTry' : { $exists: false }, 'store.error': {$exists : false}})
     // .or({'store.lastTry' : {$lte : new Date()-24*60*60*1000}})
@@ -183,7 +189,7 @@ var downloader = {
           if (err) return done(err);
 
           if (!users || !users.length) {
-            console.debug("Didn't find any user records for any of the user ids:", photo.owners);
+            console.debug('Didn\'t find any user records for any of the user ids:', photo.owners);
             return photo.remove(done);
           }
 
