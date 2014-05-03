@@ -2,6 +2,7 @@
 // ===
 
 var Photo = require('AllYourPhotosModels').photo,
+    request = require('request'),
     async = require('async');
 
 module.exports = function(user, done){
@@ -22,14 +23,27 @@ module.exports = function(user, done){
 
     async.map(photos || [], function(photo, next){
       var setter = {$set : {}};
-      setter.$set.location = photo.getLocation();
+      var location = setter.$set.location = photo.getLocation();
+      if (!location) return done();
 
-      // TODO: get timezone, place names etc from google API:s
-      // https://developers.google.com/maps/documentation/timezone/
-      console.debug('saving location', setter.$set);
-      Photo.update({_id : photo._id}, setter, {upsert: false}, function(err, nr){
-        return next(err, nr);
+      request.get({
+        json: true,
+        url: 'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng'.replace('$lat', location.lat).replace('$lng', location.lng) 
+      }, function(err, res, location){
+        if(err) return done(err);
+        setter.$set.location.details = location;
+
+        // TODO: get timezone, place names etc from geonames API:s
+        // http://api.geonames.org/timezoneJSON?lat=47.01&lng=10.2&username=demo
+        // or:
+        // https://developers.google.com/maps/documentation/timezone/
+        console.debug('saving location', setter.$set);
+        Photo.update({_id : photo._id}, setter, {upsert: false}, function(err, nr){
+          return next(err, nr);
+        });
+
       });
+
     }, function(err, nrs){
       return done(err, nrs.length);
     });
