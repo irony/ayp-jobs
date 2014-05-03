@@ -14,11 +14,13 @@ module.exports = function(user, done){
   .exists('location', false)
   .sort({taken : - 1})
   .exec(function(err, photos){
-    if (err) throw err;
+    if (err) return done(err);
+
+    if (!photos || !photos.length) return done();
 
     console.debug('found %d photos without normalized gps', photos.length);
 
-    async.map(photos, function(photo, next){
+    async.map(photos || [], function(photo, next){
       var setter = {$set : {}};
       setter.$set.location = photo.getLocation();
 

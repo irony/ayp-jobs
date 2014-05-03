@@ -99,14 +99,25 @@ Clusterer.diff = function (a,b,id, merge){
   return summary;
 };
 
+var getVector = function(photo, user){
+  var vector = [photo.taken.getTime()];
+  var mine = photo.copies && photo.copies[user._id] || photo;
 
+  vector._id = photo._id;
+  vector.oldCluster = mine.cluster;
+  vector.taken = photo.taken;
+  vector.vote = mine.vote;
+  vector.clicks = mine.clicks;
+  vector.interestingness = interestingnessCalculator(mine) || Math.floor(Math.random()*100);
+  return vector;
+};
 
 Clusterer.extractGroups = function (user, photos, nrClusters, done) {
 
   console.debug('clustering ' + photos.length + ' photos to ' + nrClusters + ' clusters');
   if (!photos.length) return [];
 
-  var vectors = photos.map(function(photo){ return getVector(photo,user);});
+  var vectors = photos.map(function(photo){ return getVector(photo,user) });
 
   Cluster.findOne({userId: user._id}, function(err, cluster){
 
@@ -115,7 +126,7 @@ Clusterer.extractGroups = function (user, photos, nrClusters, done) {
       cluster = new Cluster();
     }
 
-    var clusters = vectors && kmeans.train(vectors.filter(function (a) {return a}), nrClusters) || [];
+    var clusters = vectors && kmeans.cluster(vectors.filter(function (a) { return a }), nrClusters) || [];
     var groups = clusters.map(function (cluster,i) {
       var group = {};
       group.index = i;
@@ -137,19 +148,6 @@ Clusterer.extractGroups = function (user, photos, nrClusters, done) {
 
     console.debug('done, ' + groups.length + ' clusters created');
   });
-};
-
-var getVector = function(photo, user){
-  var vector = [photo.taken.getTime()];
-  var mine = photo.copies && photo.copies[user._id] || photo;
-
-  vector._id = photo._id;
-  vector.oldCluster = mine.cluster;
-  vector.taken = photo.taken;
-  vector.vote = mine.vote;
-  vector.clicks = mine.clicks;
-  vector.interestingness = interestingnessCalculator(mine) || Math.floor(Math.random()*100);
-  return vector;
 };
 
 
