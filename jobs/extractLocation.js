@@ -21,13 +21,14 @@ module.exports = function(user, done){
 
     console.debug('found %d photos without normalized gps', photos.length);
 
-    async.map(photos || [], function(photo, next){
+    async.mapSeries(photos || [], function(photo, next){
       var setter = {$set : {}};
       var location = setter.$set.location = photo.getLocation();
       if (!location) return done();
 
       request.get({
         json: true,
+        headers: {'User-Agent' : 'AllYourPhotos.org, contact: christian@allyourphotos.org'},
         url: 'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng'.replace('$lat', location.lat).replace('$lng', location.lng) 
       }, function(err, res, location){
         if(err) return done(err);

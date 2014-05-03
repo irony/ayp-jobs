@@ -23,7 +23,8 @@
     "require-dir": "~0.1.0",
     "clusterfck": "git://github.com/primaryobjects/clusterfck",
     "blitline": "~1.1.6",
-    "multiparty": "*"
+    "multiparty": "*",
+    "request": "~2.34.0"
   },
   "devDependencies": {
     "should": "~3.2.0-beta1",
