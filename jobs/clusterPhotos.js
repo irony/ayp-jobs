@@ -178,7 +178,7 @@ Clusterer.classify = function (user, photos, done) {
 Clusterer.rankGroupPhotos = function (group, nrClusters) {
   //var subClusters = utils.cluster(group.photos, nrClusters);
   var kmeans = new clusterfck.kmeans(group.centroids || null);
-  var subClusters = kmeans.train(group.photos, nrClusters);
+  var subClusters = kmeans.cluster(group.photos, nrClusters);
   
   subClusters = subClusters
     .sort(function (a, b) {
