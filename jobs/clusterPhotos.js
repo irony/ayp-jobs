@@ -15,7 +15,7 @@ function Clusterer(user, done) {
   if (!done) throw new Error('Callback is mandatory');
 
   // find all their photos and sort them on interestingness
-  Photo.find({'owners': user._id}, 'taken copies.' + user._id + ' store')
+  Photo.find({'owners': user._id}, 'taken copies.' + user._id + ' store location')
 //  .where('copies.' + user._id + '.cluster').exists(false)
   // .where('copies.' + user._id + '.clusterOrder').exists(false)
   .sort({ taken : -1 })
@@ -40,6 +40,7 @@ function Clusterer(user, done) {
     Clusterer.extractGroups(user, photos, Math.min(groupCount, 100), function(err, groups){
 
       var rankedGroups = groups.reduce(function (a, group) {
+        // TODO: add location info for the detailed grouping
         var rankedGroup = Clusterer.rankGroupPhotos(group);
         rankedGroup.userId = user._id;
         //console.log('group', rankedGroup.photos);
@@ -205,6 +206,7 @@ Clusterer.rankGroupPhotos = function (group, nrClusters) {
     });
     // console.debug('..done');
   group.photos = Clusterer.weave(subClusters);
+  group.centroids = kmeans.centroids;
   return group;
 };
 
