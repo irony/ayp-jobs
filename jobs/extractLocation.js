@@ -43,7 +43,7 @@ module.exports = function(user, done){
       });
     }, function(err, nrs){
       if (err) console.log('location error', err);
-      return done(err, nrs.length);
+      return done(err, nrs.reduce(function(a,b){return a+b}));
     });
   });
 };
