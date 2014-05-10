@@ -168,8 +168,7 @@ var importer = {
         if (err) console.debug('import err: ', err);
         else console.debug('import done, found: ' + (photos && photos.length || 0) + ', next: ' + photos.next);
         clearTimeout(timeout);
-        var next = photos.next;
-        done(err, photos, next);
+        done(err, photos || [], photos.next);
       });
 
     });
