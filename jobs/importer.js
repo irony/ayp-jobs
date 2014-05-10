@@ -166,9 +166,9 @@ var importer = {
 
       connector.importNewPhotos(user, options, function(err, photos){
         if (err) console.debug('import err: ', err);
-        else console.debug('import done, found: ' + (photos && photos.length || 0) + ', next: ' + photos.next);
+        else console.debug('import done, found: ' + (photos && photos.length || 0) + ', next: ' + photos && photos.next);
         clearTimeout(timeout);
-        done(err, photos || [], photos.next);
+        done(err, photos || [], photos && photos.next);
       });
 
     });
