@@ -13,7 +13,7 @@ module.exports = function(user, done){
   Photo.find({
     'owners': user._id, 
     'exif.gps.GPSLongitude' : {$exists: true}, 
-    'location.place': { $exists:false }
+    'location.place': { $exists:false },
   }, 'exif.gps location')
   .sort({taken : - 1})
   .exec(function(err, photos){
