@@ -160,10 +160,6 @@ var importer = {
       if (!connector || !connector.importNewPhotos)
         return done(new Error('No import connector found with name ' + connectorName));
 
-      var timeout = setTimeout(function(){
-        done(new Error('Timeout expired')); // let the job fail so we can retry instead
-      }, 5 * 60 * 1000);
-
       connector.importNewPhotos(user, options, function(err, photos){
         if (err) console.debug('import err: ', err);
         else console.debug('import done, found: ' + (photos && photos.length || 0) + ', next: ' + (photos && photos.next || ''));
