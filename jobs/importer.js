@@ -129,6 +129,7 @@ var importer = {
    */
   waitForMoreFromConnector : function(user, connectorName, done){
     User.findById(user._id, function(err, user){
+      if (!user) return done(new Error('User not found', err));
       var connector = connectors[connectorName];
       if (connector.wait){
         console.debug('Waiting for new photos at %s for %s', connectorName, user._id);
