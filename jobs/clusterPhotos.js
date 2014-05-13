@@ -122,7 +122,7 @@ Clusterer.extractGroups = function (user, photos, nrClusters, done) {
 
   Cluster.findOne({userId: user._id}, function(err, cluster){
 
-    var kmeans = new clusterfck.kmeans(cluster && cluster.centroids || []);
+    var kmeans = new clusterfck.Kmeans(cluster && cluster.centroids || []);
     if (!cluster){
       cluster = new Cluster();
     }
@@ -158,7 +158,7 @@ Clusterer.classify = function (user, photos, done) {
     if (err || !snapshot) return done(err);
 
     var vectors = photos.map(function(photo){ return getVector(photo,user);});
-    var kmeans = new clusterfck.kmeans(snapshot.centroids);
+    var kmeans = new clusterfck.Kmeans(snapshot.centroids);
     var affectedGroups = vectors.reduce(function(affectedGroups, vector, i){
       var index = kmeans.classify(vector);
       var group = snapshot.groups[index];
@@ -178,7 +178,7 @@ Clusterer.classify = function (user, photos, done) {
 
 Clusterer.rankGroupPhotos = function (group, nrClusters) {
   //var subClusters = utils.cluster(group.photos, nrClusters);
-  var kmeans = new clusterfck.kmeans(group.centroids || null);
+  var kmeans = new clusterfck.Kmeans(group.centroids || null);
   var subClusters = kmeans.cluster(group.photos, nrClusters);
   
   subClusters = subClusters
