@@ -151,6 +151,7 @@ var importer = {
    * @param  {Function} done callback when done
    */
   importPhotosFromConnector : function(user, connectorName, options, done){
+    console.debug('Looking up user...');
     User.findById(user._id, function(err, user){
       if (err || !user) return done(err || 'no user');
 
