@@ -42,7 +42,7 @@ var importer = {
 
       if (!dbPhoto){
         if (photo._id) {
-          dbPhoto = photo;
+          _.merge(dbPhoto, photo);
         } else{
           dbPhoto = new Photo(photo);
         }
