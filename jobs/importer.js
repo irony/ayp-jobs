@@ -21,7 +21,9 @@ var importer = {
    */
   
   findOrInitPhoto : function(user, photo, done){
+    console.debug('find', photo);
     Photo.find({'taken' : photo.taken}, function(err, photos){
+      console.debug('init', err, photos && photos.length);
       var dbPhoto = photos.filter(function(existingPhoto){
         // We found a set of photos at the exact same time but before assuming
         // it is the same we want to do some checks to find our own
@@ -99,8 +101,10 @@ var importer = {
       var _user = user;
 
       importer.findOrInitPhoto(_user, photo, function(err, photo){
+        console.log('initphoto done', err, photo);
 
         photo.save(function(err, photo){
+          console.log('saved photo done', err, photo);
           next(err, photo);
         });
       });
