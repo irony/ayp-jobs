@@ -21,8 +21,10 @@ var importer = {
    */
   
   findOrInitPhoto : function(user, photo, done){
-    console.debug('find', photo);
-    Photo.find({'taken' : photo.taken}, function(err, photos){
+    console.debug('find %s', photo.taken);
+    Photo.find({'taken' : photo.taken})
+    .limit(10)
+    .exec(function(err, photos){
       console.debug('init', err, photos && photos.length);
       var dbPhoto = photos.filter(function(existingPhoto){
         // We found a set of photos at the exact same time but before assuming
@@ -44,6 +46,7 @@ var importer = {
 
       if (!dbPhoto){
         if (photo._id) {
+          delete photo._id;
           _.merge(dbPhoto, photo);
         } else{
           dbPhoto = new Photo(photo);
@@ -101,6 +104,7 @@ var importer = {
       var _user = user;
 
       importer.findOrInitPhoto(_user, photo, function(err, photo){
+        if (err) return next(err);
         console.log('initphoto done', err, photo);
 
         photo.save(function(err, photo){

@@ -101,7 +101,7 @@ Clusterer.diff = function (a,b,id, merge){
 };
 
 var getVector = function(photo, user){
-  var vector = [(photo.taken ||  photo.modified || new Date()).getTime()];
+  var vector = [new Date((photo.taken || photo.modified)).getTime()];
   var mine = photo.copies && photo.copies[user._id] || photo;
 
   vector._id = photo._id;
