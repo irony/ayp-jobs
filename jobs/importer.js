@@ -39,7 +39,7 @@ var importer = {
       }
 
       dbPhoto.taken = photo.taken || photo.modified;
-      photo.owners.forEach(function(owner){
+      (photo.owners || [user._id]).forEach(function(owner){
         if (dbPhoto.owners.indexOf(owner) < 0) dbPhoto.owners.push(owner);
       })
 
