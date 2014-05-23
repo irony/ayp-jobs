@@ -1,15 +1,42 @@
+var nconf = require('nconf');
+nconf.overrides({
+  mongoUrl : 'mongodb://localhost/ayp-test',
+  redis: {
+    'host': 'localhost'
+  },
+});
+
+nconf
+  .env() // both use environment and file
+  .file({file: 'config.json', dir:'../../', search: true});
+
 var should = require('should');
 
 // Models
-var Models = require('AllYourPhotosModels').init();
+var Models = require('AllYourPhotosModels').init(nconf);
 var importer = require('../').importer;
 
-var ShareSpan = Models.sharespan;
 var User = Models.user;
 var Photo = Models.photo;
 
+console.debug = console.log;
 
-describe("importer", function() {
+describe('importer', function() {
+  it('should not add duplicate users to a photo', function(done){
+    var userA = new User();
+    var now = new Date();
+    var photoA = new Photo({taken: now, bytes: 3333333, owners: [userA]})
+    photoA.save(function(){
+      var photoB = new Photo({taken: now, bytes: 3333333, owners: [userA]})
+      importer.upsertPhoto(userA, photoB, function(err, savedPhoto){
+        should.not.exist(err);
+        savedPhoto.owners.should.have.length(1);
+        savedPhoto._id.should.eql(photoA._id);
+        done();
+      });
+    });
+  });
+
   it('should import new properties to an existing photo', function(done) {
 
     var taken = new Date();
@@ -23,11 +50,9 @@ describe("importer", function() {
       owners: [userA]
     });
 
+    photoA.save(function(err) {
 
-    photoA.save(function(err, photoAsaved) {
-
-      should.not.exist(err, "error when saving photoA", err);
-
+      should.not.exist(err, 'error when saving photoA', err);
 
       var photoB = new Photo({
         taken: taken,
@@ -39,9 +64,8 @@ describe("importer", function() {
         }
       });
 
-      importer.findOrInitPhoto(userA, photoB, function(err, photo) {
-        if (err)
-          should.not.exist(err, "error when initing photo", err);
+      importer.upsertPhoto(userA, photoB, function(err, photo) {
+        should.not.exist(err, 'error when initing photo', err);
 
         photo.taken.toString().should.equal(photoA.taken.toString());
 
@@ -58,7 +82,7 @@ describe("importer", function() {
   });
 
 
-  it("should be possible to add a photo which already exists and resulting in two owners of the existing photo.", function(done) {
+  it('should be possible to add a photo which already exists and resulting in two owners of the existing photo.', function(done) {
 
     var userA = new User();
     var userB = new User();
@@ -67,10 +91,10 @@ describe("importer", function() {
     var size = Math.floor(Math.random() * 30000);
 
     userA.save(function(err, userA) {
-      should.not.exist(err, "Error when saving user A", err);
+      should.not.exist(err, 'Error when saving user A', err);
       userB.save(function(err, userB) {
 
-        should.not.exist(err, "Error when saving user B", err);
+        should.not.exist(err, 'Error when saving user B', err);
 
         var photoA = new Photo({
           taken: taken,
@@ -80,9 +104,9 @@ describe("importer", function() {
 
         photoA.save(function(err, photo) {
 
-          should.not.exist(err, "error when saving photoA", err);
+          should.not.exist(err, 'error when saving photoA', err);
 
-          photo.owners.should.include(userA._id, "UserA does not exist", err);
+          photo.owners.should.include(userA._id, 'UserA does not exist', err);
 
           var photoB = new Photo({
             taken: taken,
@@ -90,29 +114,25 @@ describe("importer", function() {
             owners: [userB] // only one user
           });
 
-          importer.findOrInitPhoto(userB, photoB, function(err, photoB) {
-
+          importer.upsertPhoto(userB, photoB, function(err, photoB) {
 
             photoB.taken.should.equal(taken);
 
             should.not.exist(err);
 
-            photoB.save(function(err, savedPhoto) {
+            should.not.exist(err, 'error when saving photoB');
+            photoB.owners.should.include(userA._id, 'UserA does not exist before saving');
+            photoB.owners.should.include(userB._id, 'UserB does not exist before saving');
 
-              should.not.exist(err, "error when saving photoB");
-              savedPhoto.owners.should.include(userA._id, "UserA does not exist before saving");
-              savedPhoto.owners.should.include(userB._id, "UserB does not exist before saving");
-
-              // since we already have a photo with this taken date we will add users to it
-              Photo.findOne({
-                _id: photoA._id
-              }, function(err, photo) {
-                photo.owners.should.include(userA._id, "UserA does not exist");
-                photo.owners.should.include(userB._id, "UserB does not exist");
-                should.not.exist(err);
-                should.exist(photo);
-                done();
-              });
+            // since we already have a photo with this taken date we will add users to it
+            Photo.findOne({
+              _id: photoA._id
+            }, function(err, photo) {
+              photo.owners.should.include(userA._id, 'UserA does not exist');
+              photo.owners.should.include(userB._id, 'UserB does not exist');
+              should.not.exist(err);
+              should.exist(photo);
+              done();
             });
           });
         });

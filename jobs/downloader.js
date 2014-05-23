@@ -25,7 +25,7 @@ var downloader = {
     if (!options || (!options.thumbnail && !options.original)) return done('No downloader defined in options');
 
     User.findById(user._id, function(err, user){
-      if(err) return done(err);
+      if(err || !user) return done(err);
 
       Photo.findById(barePhoto._id, function(err, photo){
         if (err) return done(err);

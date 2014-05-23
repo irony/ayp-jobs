@@ -65,13 +65,7 @@ connector.handleRequest = function(req, done){
       parts--;
       // the last part is parsed
       if (parts === 0){
-        importer.findOrInitPhoto(req.user, photo, function(err, importedPhoto){
-          if (err) return done(err);
-          console.log('saving', importedPhoto);
-          importedPhoto.save(function(err, photo){
-            if (done) return done(err, photo);
-          });
-        });
+        importer.upsertPhoto(req.user, photo, done);
       }
 
     });

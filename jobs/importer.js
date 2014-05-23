@@ -20,71 +20,42 @@ var importer = {
    * @return {[type]}         [description]
    */
   
-  findOrInitPhoto : function(user, photo, done){
-    console.debug('find %s', photo.taken);
-    Photo.find({'taken' : photo.taken})
-    .limit(10)
-    .exec(function(err, photos){
-      console.debug('init', err, photos && photos.length);
-      var dbPhoto = photos.filter(function(existingPhoto){
-        // We found a set of photos at the exact same time but before assuming
-        // it is the same we want to do some checks to find our own
-        var found = _.some(existingPhoto.owners, function(item){return item === user._id}) ||
-        existingPhoto.path === photo.path || // or same filename
-        photo.bytes > 100000 && existingPhoto.bytes === photo.bytes; // or same file size
-
-        return found;
-      }).pop();
-
-      if (!photo.taken) photo.taken = photo.modified;
-      // console.debug('found %s', dbPhoto ? "one photo" : "no photos", err);
-
-      if (err) {
-        console.log('Error finding photo', err);
-        return done(err);
-      }
+  upsertPhoto : function(user, photo, done){
+    if (!photo.taken || !photo.bytes) return done('Taken and bytes are required');
+    
+    Photo.findOne({'taken' : photo.taken})
+    .or([
+      {'path' : photo.path},
+      {$and: [{bytes : photo.bytes}, {bytes : {$gte : photo.bytes}}]},
+      {owners: user._id}
+    ])
+    .sort({'bytes' : -1})
+    .exec(function(err, dbPhoto){
+      if (err) return done(err);
 
       if (!dbPhoto){
-        if (photo._id) {
-          delete photo._id;
-          _.merge(dbPhoto, photo);
-        } else{
-          dbPhoto = new Photo(photo);
-        }
+        delete photo._id;
+        dbPhoto = new Photo(photo);
       }
 
-      dbPhoto.set('owners', _.uniq(_.union([user._id], dbPhoto.owners)));
+      dbPhoto.taken = photo.taken || photo.modified;
+      photo.owners.forEach(function(owner){
+        if (dbPhoto.owners.indexOf(owner) < 0) dbPhoto.owners.push(owner);
+      })
 
       if (!dbPhoto.copies) dbPhoto.copies = {};
 
-      var photoCopy = dbPhoto.copies[user._id];
-
-      if (!photoCopy)
-        dbPhoto.copies[user._id] = photoCopy = new PhotoCopy();
-
-      photoCopy.interestingness = photoCopy.interestingness || Math.random() * 100; // dummy value now. TODO: change to real one
-      dbPhoto.markModified('copies');
-      // dbPhoto.metadata = _.extend(dbPhoto.metadata || {}, photo);
-
-      if (photo.store){
-        dbPhoto.store = _.extend(dbPhoto.store || {}, photo.store);
-        dbPhoto.markModified('store');
-      }
-
-      if (photo.exif){
-        dbPhoto.exif = _.extend(dbPhoto.exif || {}, photo.exif);
-        dbPhoto.markModified('exif');
-      }
-
-      dbPhoto.taken = photo.taken;
-
-      if (photo.ratio)
-        dbPhoto.ratio = photo.ratio;
-
+      dbPhoto.set('copies.' + user._id, dbPhoto.copies[user._id] || {});
+      dbPhoto.set('store', _.extend(dbPhoto.store || {}, photo.store || {}));
+      dbPhoto.set('exif', _.extend(dbPhoto.exif || {}, photo.exif || {}));
+      dbPhoto.ratio = photo.ratio || dbPhoto.ratio;
       dbPhoto.mimeType = photo.mimeType;
       dbPhoto.bytes = dbPhoto.bytes || photo.bytes;
-
-      return done(null, dbPhoto);
+      
+      dbPhoto.save(function(err){
+        if (err) console.error('Error when saving photo', err, dbPhoto);
+        return done(err, dbPhoto);
+      })
     });
 
   },
@@ -103,15 +74,7 @@ var importer = {
       console.debug('Saving photo %s', photo.path, photo.client_mtime, photo.taken, photo.bytes);
       var _user = user;
 
-      importer.findOrInitPhoto(_user, photo, function(err, photo){
-        if (err) return next(err);
-        console.log('initphoto done', err, photo);
-
-        photo.save(function(err, photo){
-          console.log('saved photo done', err, photo);
-          next(err, photo);
-        });
-      });
+      importer.upsertPhoto(_user, photo, next);
 
     }, done);
   },
@@ -181,7 +144,7 @@ var importer = {
 
   getAllImportConnectorsForUser : function(user, done){
     User.findById(user._id, function(err, user){
-      if (err) return done(err);
+      if (err || !user) return done(err);
       if (user.accounts){
         var importConnectors = _.map(user.accounts, function(account, connectorName){
           var connector = connectors[connectorName];
