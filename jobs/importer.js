@@ -45,7 +45,10 @@ var importer = {
 
       if (!dbPhoto.copies) dbPhoto.copies = {};
 
-      dbPhoto.set('copies.' + user._id, dbPhoto.copies[user._id] || {});
+      var photoCopy = new PhotoCopy();
+      delete photoCopy._id; // prevent mongoose version lookup info
+
+      dbPhoto.set('copies.' + user._id, dbPhoto.copies[user._id] || photoCopy);
       dbPhoto.set('store', _.extend(dbPhoto.store || {}, photo.store || {}));
       dbPhoto.set('exif', _.extend(dbPhoto.exif || {}, photo.exif || {}));
       dbPhoto.ratio = photo.ratio || dbPhoto.ratio;

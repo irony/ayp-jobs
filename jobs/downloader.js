@@ -37,10 +37,6 @@ var downloader = {
           
           console.debug('Downloading %s %s from %s', options.thumbnail && 'thumbnail', options.original && 'and original' || '', photo.source);
           
-          var timeout = setTimeout(function(){
-            done(new Error('Timeout expired')); // let the job fail so we can retry instead
-          }, 60 * 60 * 1000);
-         
           async.parallel({
             original : function(done){
 
@@ -70,9 +66,8 @@ var downloader = {
                 return done();
               }
             }
-          }, function(err, result){
+          }, function(err){
             if (err) return done(err);
-            clearTimeout(timeout);
 
             photo.markModified('store');
             if (options.save) photo.save(done);
