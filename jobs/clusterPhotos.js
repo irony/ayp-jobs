@@ -37,7 +37,7 @@ function Clusterer(user, done) {
 
     // groupCount should be around 24 best photos per big event
 
-    Clusterer.extractGroups(user, photos, Math.min(groupCount, 100), function(err, groups){
+    Clusterer.extractGroups(user, photos, Math.min(groupCount || 100, 100), function(err, groups){
 
       var rankedGroups = groups.reduce(function (a, group) {
         // TODO: add location info for the detailed grouping
