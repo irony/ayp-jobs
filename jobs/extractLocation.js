@@ -28,6 +28,8 @@ module.exports = function(user, done){
       var location = setter.$set.location = photo.getLocation();
       if (!location) return done();
 
+      console.error('looking up %s %s', location.lng, location.lat);
+
       new Place().lookup(location.lng, location.lat, function(err, place){
         if (err) return next(err);
         location.place = place;
