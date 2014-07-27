@@ -61,7 +61,7 @@ describe('jobs', function(){
         groups.length.should.be.above(0);
         groups = groups.sort(function(a,b){return b.photos.length - a.photos.length});
         var lengths = groups.map(function(group){return group.photos.length});
-        // lengths.should.eql([ 30, 18, 14, 10, 10, 6, 5, 4, 2, 1 ]);
+        //lengths.should.eql([ 235, 222, 200, 197, 172, 147, 146, 134, 121, 26 ]);
         should.ok(groups[0].photos.length > groups.slice(-1).pop().photos.length);
         return done();
       });
