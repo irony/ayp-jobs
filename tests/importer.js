@@ -1,8 +1,8 @@
 var nconf = require('nconf');
 nconf.overrides({
-  mongoUrl : 'mongodb://localhost/ayp-test',
+  mongoUrl : 'mongodb://192.168.59.103/ayp-test',
   redis: {
-    'host': 'localhost'
+    'host': '192.168.59.103'
   },
 });
 
