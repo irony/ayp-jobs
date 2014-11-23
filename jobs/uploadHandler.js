@@ -1,7 +1,7 @@
-var connectors = require('AllYourPhotosConnectors')();
+var connectors = require('ayp-connectors')();
 var importer = require('./importer');
 var multiparty = require('multiparty');
-var Photo = require('AllYourPhotosModels').photo;
+var Photo = require('ayp-models').photo;
 var _ = require('lodash');
 var connector = new connectors.base();
 

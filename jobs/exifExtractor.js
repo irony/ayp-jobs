@@ -6,7 +6,7 @@
 // Make it work
 
 var blitline = require('blitline'),
-    Photo = require('AllYourPhotosModels').photo,
+    Photo = require('ayp-models').photo,
     callbackBaseUrl = "http://" + (process.env.HOST || "dev.allyourphotos.org:3000");
 
 module.exports = {

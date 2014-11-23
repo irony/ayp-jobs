@@ -2,10 +2,10 @@
 // ===
 
 
-var Photo = require('AllYourPhotosModels').photo,
-    PhotoCopy = require('AllYourPhotosModels').photoCopy,
-    Cluster = require('AllYourPhotosModels').cluster,
-    Group = require('AllYourPhotosModels').group,
+var Photo = require('ayp-models').photo,
+    PhotoCopy = require('ayp-models').photoCopy,
+    Cluster = require('ayp-models').cluster,
+    Group = require('ayp-models').group,
     async = require('async'),
     _ = require('lodash'),
     clusterfck = require('clusterfck'),

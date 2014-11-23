@@ -3,7 +3,7 @@
 // Find relevant information to group on. First off is the date.
 // Use dayname, month, summer, winter, known holidays etc
 
-var Photo = require('AllYourPhotosModels').photo,
+var Photo = require('ayp-models').photo,
     async = require('async'),
     emit = {};
 

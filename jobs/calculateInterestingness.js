@@ -2,7 +2,7 @@
 // ===
 // A job to calculate interestingness for all photos by all users
 
-var Photo = require('AllYourPhotosModels').photo,
+var Photo = require('ayp-models').photo,
     async = require('async'),
     emit = {}; // fool jsLint
 

@@ -2,10 +2,10 @@
 // ====
 // Helper methods for downloading all photos for all active connectors
 
-var Photo = require('AllYourPhotosModels').photo;
-var PhotoCopy = require('AllYourPhotosModels').photoCopy;
-var User = require('AllYourPhotosModels').user;
-var connectors = require('AllYourPhotosConnectors')();
+var Photo = require('ayp-models').photo;
+var PhotoCopy = require('ayp-models').photoCopy;
+var User = require('ayp-models').user;
+var connectors = require('ayp-connectors')();
 var _ = require('lodash');
 var async = require('async');
 

@@ -4,7 +4,7 @@
 // which can be used to filter all photos on
 
 
-var Photo = require('AllYourPhotosModels').photo,
+var Photo = require('ayp-models').photo,
     async = require('async');
 
 

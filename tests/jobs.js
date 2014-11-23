@@ -17,7 +17,7 @@ var async = require('async');
 var _ = require('lodash');
 
 // Models
-var Models = require('AllYourPhotosModels').init(nconf);
+var Models = require('ayp-models').init(nconf);
 var User = Models.user;
 var Photo = Models.photo;
 var Group = Models.group;

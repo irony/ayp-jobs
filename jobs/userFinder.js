@@ -1,7 +1,7 @@
 // Find users where an import is due
 // ====
 
-var User = require('AllYourPhotosModels').user;
+var User = require('ayp-models').user;
 var _ = require('lodash');
 var async = require('async');
 

@@ -1,8 +1,7 @@
 {
-  "name": "AllYourPhotosJobs",
-  "version": "0.0.0",
+  "name": "ayp-jobs",
+  "version": "0.0.1",
   "description": "ERROR: No README.md file found!",
-  "private": true,
   "main": "index.js",
   "scripts": {
     "test": "mocha tests -R spec"
@@ -14,7 +13,7 @@
     "nconf": "*"
   },
   "dependencies": {
-    "AllYourPhotosModels": "irony/ayp-models",
+    "ayp-models": "*",
     "lodash": "*",
     "redis": "*",
     "async": "*",

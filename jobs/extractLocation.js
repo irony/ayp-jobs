@@ -1,8 +1,8 @@
 // Update Location
 // ===
 
-var Photo = require('AllYourPhotosModels').photo,
-    Place = require('AllYourPhotosModels').place,
+var Photo = require('ayp-models').photo,
+    Place = require('ayp-models').place,
     async = require('async');
 
 module.exports = function(user, photos, done){

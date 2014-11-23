@@ -13,7 +13,7 @@ nconf
 var should = require('should');
 
 // Models
-var Models = require('AllYourPhotosModels').init(nconf);
+var Models = require('ayp-models').init(nconf);
 var importer = require('../').importer;
 
 var User = Models.user;

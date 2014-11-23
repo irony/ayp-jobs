@@ -1,4 +1,4 @@
-var Photo = require('AllYourPhotosModels').photo,
+var Photo = require('ayp-models').photo,
     async = require('async'),
     emit = {};
 
