@@ -16,20 +16,18 @@
   "dependencies": {
     "AllYourPhotosModels": "irony/ayp-models",
     "lodash": "*",
-    "mongoose": "*",
     "redis": "*",
     "async": "*",
     "nconf": "*",
     "require-dir": "~0.1.0",
     "clusterfck": "primaryobjects/clusterfck",
-    "blitline": "~1.1.6",
-    "multiparty": "*",
-    "request": "~2.34.0"
+    "multiparty": "*"
   },
   "devDependencies": {
     "should": "~3.2.0-beta1",
     "supertest": "~0.9.0",
     "mocha": "~1.18.2",
+    "mongoose": "*",
     "grunt": "~0.4.4",
     "grunt-simple-mocha": "~0.4.0",
     "grunt-contrib-watch": "~0.6.1",

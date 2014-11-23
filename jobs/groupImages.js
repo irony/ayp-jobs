@@ -3,10 +3,8 @@
 // Find relevant information to group on. First off is the date.
 // Use dayname, month, summer, winter, known holidays etc
 
-var ObjectId = require('mongoose').Types.ObjectId,
-    Photo = require('AllYourPhotosModels').photo,
+var Photo = require('AllYourPhotosModels').photo,
     async = require('async'),
-    mongoose = require('mongoose'),
     emit = {};
 
 

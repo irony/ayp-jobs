@@ -1,7 +1,5 @@
-var ObjectId = require('mongoose').Types.ObjectId,
-    Photo = require('AllYourPhotosModels').photo,
+var Photo = require('AllYourPhotosModels').photo,
     async = require('async'),
-    mongoose = require('mongoose'),
     emit = {};
 
 

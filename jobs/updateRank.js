@@ -4,12 +4,8 @@
 // which can be used to filter all photos on
 
 
-var ObjectId = require('mongoose').Types.ObjectId,
-    Photo = require('AllYourPhotosModels').photo,
-    User = require('AllYourPhotosModels').user,
-    async = require('async'),
-    emit = {}, // fool jsLint
-    mongoose = require('mongoose');
+var Photo = require('AllYourPhotosModels').photo,
+    async = require('async');
 
 
 module.exports = function(user, done){

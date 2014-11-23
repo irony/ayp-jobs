@@ -2,8 +2,7 @@
 // ===
 // A job to calculate interestingness for all photos by all users
 
-var ObjectId = require('mongoose').Types.ObjectId,
-    Photo = require('AllYourPhotosModels').photo,
+var Photo = require('AllYourPhotosModels').photo,
     async = require('async'),
     emit = {}; // fool jsLint
 
