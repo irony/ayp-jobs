@@ -163,6 +163,7 @@ Clusterer.classify = function (user, photos, done) {
       var index = kmeans.classify(vector);
       var group = snapshot.groups[index];
       photos[i].cluster = index;
+      group.photos = group.photos || [];
       group.photos.push(vector);
       if (affectedGroups.indexOf(group) < 0) affectedGroups.push(group);
       return affectedGroups;
