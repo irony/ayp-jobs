@@ -10,11 +10,6 @@ nconf.overrides({
   }
 });
 
-nconf
-  .env() // both use environment and file
-  .file({file: 'config.json', dir:'../../', search: true});
-
-
 var should = require('should');
 var async = require('async');
 var _ = require('lodash');
