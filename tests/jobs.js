@@ -1,11 +1,11 @@
 // run tests locally or with test collection
 var nconf = require('nconf');
 nconf.overrides({
-  mongoUrl : 'mongodb://192.168.59.103/ayp-test',
+  mongoUrl : 'mongodb://mongodb/ayp-test',
   redis: {
-    'host': '192.168.59.103'
+    'host': 'mongodb'
   },
-  aws:{
+  aws: {
     bucket: ''
   }
 });
