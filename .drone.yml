@@ -14,5 +14,5 @@ publish:
   npm:
     username: irony
     email: cl@iteam.se
-    password: $NPM_PASSWORD
+    password: {{NPM_PASSWORD}}
     registry: http://registry.npmjs.org/
