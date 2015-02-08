@@ -1,6 +1,7 @@
 // run tests locally or with test collection
 var nconf = require('nconf');
-nconf.overrides(require('./test.json'));
+nconf.defaults(require('./test.json'));
+nconf.env();
 
 var should = require('should');
 var async = require('async');

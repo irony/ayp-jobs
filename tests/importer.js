@@ -1,5 +1,6 @@
 var nconf = require('nconf');
-nconf.overrides(require('./test.json'));
+nconf.defaults(require('./test.json'));
+nconf.env();
 var should = require('should');
 
 // Models
