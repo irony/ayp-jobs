@@ -1,15 +1,5 @@
 var nconf = require('nconf');
-nconf.overrides({
-  mongoUrl : 'mongodb://192.168.59.103/ayp-test',
-  redis: {
-    'host': '192.168.59.103'
-  },
-});
-
-nconf
-  .env() // both use environment and file
-  .file({file: 'config.json', dir:'../../', search: true});
-
+nconf.overrides(require('./test.json'));
 var should = require('should');
 
 // Models

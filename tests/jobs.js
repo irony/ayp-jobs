@@ -1,21 +1,13 @@
 // run tests locally or with test collection
 var nconf = require('nconf');
-nconf.overrides({
-  mongoUrl : 'mongodb://mongodb/ayp-test',
-  redis: {
-    'host': 'mongodb'
-  },
-  aws: {
-    bucket: ''
-  }
-});
+nconf.overrides(require('./test.json'));
 
 var should = require('should');
 var async = require('async');
 var _ = require('lodash');
 
 // Models
-var Models = require('ayp-models').init(nconf);
+var Models = require('ayp-models').init();
 var User = Models.user;
 var Photo = Models.photo;
 var Group = Models.group;

@@ -1,0 +1,41 @@
+{
+  "aws": {
+    "bucket": "foo",
+    "key": "test",
+    "secret": "bar"
+  },
+  "baseUrl": "http://dev.allyourphotos.org:3000",
+  "dbox": {
+    "app_key": "foo",
+    "app_secret": "bar",
+    "root": "",
+    "scope": ""
+  },
+  "facebook": {
+    "appId": "foo",
+    "appSecret": "bar"
+  },
+  "flickr": {
+    "consumerKey": "foo",
+    "consumerSecret": "bar"
+  },
+  "google": {
+    "clientId": "foo",
+    "clientSecret": "foo",
+    "apiKey": "bar"
+  },
+  "instagram": {
+    "clientId": "foo",
+    "clientSecret": "bar"
+  },
+  "mongoUrl": "mongodb://mongodb/test",
+  "redis": {
+    "port": 6379,
+    "host": "redis"
+  },
+  "sessionSecret": "foobar",
+  "twitter": {
+    "consumerKey": "foo",
+    "consumerSecret": "bar"
+  }
+}

@@ -4,6 +4,7 @@ script:
   - npm config set registry http://npm.iteam.se:4873/
   - npm install
   - npm test
+  - npm version patch
 
 services:
   - redis
