@@ -218,7 +218,7 @@ describe('jobs', function(){
           if (err) throw err;
           groups = _groups;
           newPhoto = _.clone(groups[3].photos[0]);
-          newPhoto.taken = groups[3].photos[0].taken;
+          newPhoto.taken = groups[3].photos[0].taken+1000;
           done();
         });
       });
@@ -239,6 +239,21 @@ describe('jobs', function(){
           var affectedGroup = affectedGroups[0];
           affectedGroup.photos.slice(-1)[0].taken.should.eql(newPhoto.taken);
           //group.index.should.eql(3);
+          //groups[group.index].photos.length.should.eql(group.photos.length-1);
+          done();
+        });
+      });
+
+      it('should be able to move photos between groups', function(done){
+        this.timeout(300);
+        newPhoto.taken = 0;
+        clusterer.classify(userA, [newPhoto], function(err, affectedGroups){
+          if (err) throw err;
+          affectedGroups.length.should.eql(1);
+          var affectedGroup = affectedGroups[0];
+          affectedGroup.photos.slice(-1)[0].taken.should.eql(newPhoto.taken);
+          affectedGroup.index.should.eql(0);
+          affectedGroup.index.should.not.eql(3);
           //groups[group.index].photos.length.should.eql(group.photos.length-1);
           done();
         });
