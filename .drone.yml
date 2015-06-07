@@ -1,4 +1,4 @@
-image: node0.10
+image: irony/ayp-base
 
 script:
   - npm config set registry http://npm.iteam.se:4873/
