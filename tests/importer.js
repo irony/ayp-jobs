@@ -1,6 +1,6 @@
 var nconf = require('nconf');
 nconf.defaults(require('./test.json'));
-nconf.env();
+nconf.env('__');
 var should = require('should');
 
 // Models

@@ -11,7 +11,6 @@ var _ = require('lodash');
 var Models = require('ayp-models').init();
 var User = Models.user;
 var Photo = Models.photo;
-var Group = Models.group;
 var Cluster = Models.cluster;
 var ObjectId = require('mongoose').Types.ObjectId;
 
