@@ -1,6 +1,6 @@
 {
   "name": "ayp-jobs",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "ERROR: No README.md file found!",
   "main": "index.js",
   "scripts": {
@@ -13,15 +13,15 @@
     "nconf": "*"
   },
   "dependencies": {
-    "ayp-models": "*",
-    "ayp-connectors": "*",
-    "lodash": "*",
-    "redis": "*",
     "async": "*",
-    "nconf": "*",
-    "require-dir": "~0.1.0",
+    "ayp-connectors": "*",
+    "ayp-models": "^0.1.0",
     "clusterfck": "primaryobjects/clusterfck",
-    "multiparty": "*"
+    "lodash": "*",
+    "multiparty": "*",
+    "nconf": "*",
+    "redis": "*",
+    "require-dir": "~0.1.0"
   },
   "devDependencies": {
     "should": "~3.2.0-beta1",

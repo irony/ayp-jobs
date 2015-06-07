@@ -10,13 +10,13 @@ var Photo = require('ayp-models').photo,
 
 module.exports = function(user, done){
 
-  if (!done) throw new Error("Callback is mandatory");
+  if (!done) throw new Error('Callback is mandatory');
   var affectedPhotos = 0;
 
   // find all their photos and sort them on interestingness
   Photo.find({'owners': user._id}, 'copies.' + user._id + '.rank copies.' + user._id + '.interestingness')
   .exec(function(err, photos){
-    if (err) throw err;
+    if (err) return done(err);
 
     photos.sort(function(a,b){
       return (a.copies[user._id] && a.copies[user._id].interestingness || 0) - (b.copies[user._id] && b.copies[user._id].interestingness || 0);
@@ -40,7 +40,7 @@ module.exports = function(user, done){
 
       var setter = {$set : {}};
       setter.$set['copies.' + user._id + '.rank'] = newRank;
-      setter.$set['copies.' + user._id + '.calculatedVote'] = Math.min(10, Math.round(newRank / photos.length * 15)); // 15 is to allow fewer pictures in "the best"
+      setter.$set['copies.' + user._id + '.calculatedVote'] = Math.min(10, Math.round(newRank / photos.length * 15)); // 15 is to allow fewer pictures in 'the best'
       setter.$set['copies.' + user._id + '.calculated'] = new Date();
       setter.$set['modified'] = new Date();
 
